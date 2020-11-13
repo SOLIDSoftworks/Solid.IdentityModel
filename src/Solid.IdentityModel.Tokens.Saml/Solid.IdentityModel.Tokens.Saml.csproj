@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Solid.IdentityModel.Tokens</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.IdentityModel.Tokens.Saml" Version="6.7.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Solid.IdentityModel.Tokens\Solid.IdentityModel.Tokens.csproj" />
+    <ProjectReference Include="..\Solid.IdentityModel.Xml\Solid.IdentityModel.Xml.csproj" />
+  </ItemGroup>
+
+</Project>
