@@ -29,21 +29,7 @@ namespace Solid.IdentityModel.Xml
         private XmlDictionaryWriter _encryptingWriter;
 
         protected CryptoProviderFactory Crypto => _credentials.CryptoProviderFactory ?? _credentials.Key.CryptoProviderFactory ?? CryptoProviderFactory.Default;
-
-        public bool UseRsaOaep
-        {
-            get
-            {
-                var key = _credentials.Key;
-                if (!(key is X509SecurityKey) && !(key is RsaSecurityKey)) 
-                    throw new InvalidOperationException("Cannot key wrap with RSA without RSA key.");
-
-                return 
-                    _credentials.Alg == SecurityAlgorithms.RsaOaepKeyWrap || 
-                    _credentials.Alg == "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p";
-            }
-        }
-
+        
         /// <summary>
         /// Encrypts an XML element while writing.
         /// </summary>
@@ -207,19 +193,20 @@ namespace Solid.IdentityModel.Xml
         {
             var keyInfo = new KeyInfo();
             keyInfo.AddClause(CreateKeyInfoClause(certificate, document, out _));
-            using (var rsa = certificate.GetRSAPublicKey())
-            {
-                var useRsaOaep = UseRsaOaep;
-                var cipherValue = EncryptedXml.EncryptKey(key, rsa, useRsaOaep);
-                var encryptedKey = new EncryptedKey
-                {
-                    CipherData = new CipherData { CipherValue = cipherValue },
-                    EncryptionMethod = new EncryptionMethod(_credentials.Alg),
-                    KeyInfo = keyInfo
-                };
 
-                return new KeyInfoEncryptedKey { EncryptedKey = encryptedKey };
-            }
+            if (!Crypto.IsSupportedAlgorithm(_credentials.Alg, _credentials.Key))
+                throw new NotSupportedException(_credentials.Alg);
+
+            var keyWrap = Crypto.CreateKeyWrapProvider(_credentials.Key, _credentials.Alg);
+            var cipherValue = keyWrap.WrapKey(key);
+            var encryptedKey = new EncryptedKey
+            {
+                CipherData = new CipherData { CipherValue = cipherValue },
+                EncryptionMethod = new EncryptionMethod(_credentials.Alg),
+                KeyInfo = keyInfo
+            };
+
+            return new KeyInfoEncryptedKey { EncryptedKey = encryptedKey };
         }
 
         private KeyInfoClause CreateKeyInfoClause(X509Certificate2 certificate, XmlDocument document, out string digest)
@@ -231,7 +218,7 @@ namespace Solid.IdentityModel.Xml
                 var securityTokenReference = document.CreateElement(WsSecurityConstants.WsSecurity10.Prefix, "SecurityTokenReference", WsSecurityConstants.WsSecurity10.Namespace);
                 var keyIdentifier = document.CreateElement(WsSecurityConstants.WsSecurity10.Prefix, "KeyIdentifier", WsSecurityConstants.WsSecurity10.Namespace);
                 keyIdentifier.SetAttribute("ValueType", "http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#ThumbprintSHA1");
-                keyIdentifier.InnerText = GetCertificateThumbprintSha1(certificate);
+                keyIdentifier.InnerText = GetCertificateThumbprintHash(algorithm, certificate);
                 securityTokenReference.AppendChild(keyIdentifier);
                 digest = algorithm;
                 return new KeyInfoNode(securityTokenReference);
@@ -243,13 +230,18 @@ namespace Solid.IdentityModel.Xml
             }
         }
 
-        private string GetCertificateThumbprintSha1(X509Certificate2 certificate)
+        private string GetCertificateThumbprintHash(string algorithm, X509Certificate2 certificate)
         {
             var publicKey = certificate.Export(X509ContentType.Cert);
-            using (var sha1 = SHA1.Create())
+            var hash = Crypto.CreateHashAlgorithm(algorithm);
+            try
             {
-                var hashed = sha1.ComputeHash(publicKey);
+                var hashed = hash.ComputeHash(publicKey);
                 return Convert.ToBase64String(hashed);
+            }
+            finally
+            {
+                Crypto.ReleaseHashAlgorithm(hash);
             }
         }
 

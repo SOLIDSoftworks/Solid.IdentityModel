@@ -9,7 +9,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Xml;
-using KeyInfo = System.Security.Cryptography.Xml.KeyInfo;
 
 namespace Solid.IdentityModel.Xml
 {
@@ -101,22 +100,20 @@ namespace Solid.IdentityModel.Xml
                     if (encryptedType is EncryptedKey encryptedKey)
                     {
                         var pt = null as byte[];
-                        if (key is X509SecurityKey x509 && TryDecryptKey(encryptedKey, x509.Certificate, out pt))
+                        var keyWrapAlgorithm = encryptedKey.EncryptionMethod.KeyAlgorithm;
+                        if(crypto.IsSupportedAlgorithm(algorithm, key))
                         {
-                            plainText = pt;
-                            return true;
-                        }
-                        else if (key is RsaSecurityKey rsa && TryDecryptKey(encryptedKey, rsa.Rsa, out pt))
-                        {
-                            plainText = pt;
-                            return true;
-                        }
-                        else if (key is SymmetricSecurityKey symmetricKey)
-                        {
-                            symmetric = crypto.CreateSymmetricAlgorithm(symmetricKey, algorithm);
-                            pt = EncryptedXml.DecryptKey(encryptedKey.CipherData.CipherValue, symmetric);
-                            plainText = pt;
-                            return true;
+                            var keyWrap = crypto.CreateKeyWrapProviderForUnwrap(key, encryptedKey.EncryptionMethod.KeyAlgorithm);
+                            try
+                            {
+                                pt = keyWrap.UnwrapKey(encryptedKey.CipherData.CipherValue);
+                                plainText = pt;
+                                return true;
+                            }
+                            finally
+                            {
+                                crypto.ReleaseKeyWrapProvider(keyWrap);
+                            }
                         }
                     }
                 }
@@ -134,35 +131,6 @@ namespace Solid.IdentityModel.Xml
                 }
             }
             return Out.False(out plainText);
-        }
-
-        private bool TryDecryptKey(EncryptedKey encryptedKey, RSA rsa, out byte[] plainText)
-        {
-            var cipherText = encryptedKey.CipherData.CipherValue;
-            try
-            {
-                var pt = EncryptedXml.DecryptKey(cipherText, rsa, true);
-                plainText = pt;
-                return true;
-            }
-            catch { }
-            try
-            {
-                var pt = EncryptedXml.DecryptKey(cipherText, rsa, false);
-                plainText = pt;
-                return true;
-            }
-            catch { }
-            return Out.False(out plainText);
-        }
-
-        private bool TryDecryptKey(EncryptedKey encryptedKey, X509Certificate2 certificate, out byte[] plainText)
-        {
-            if (!certificate.HasPrivateKey) 
-                return Out.False(out plainText);
-
-            using (var rsa = certificate.GetRSAPrivateKey())
-                return TryDecryptKey(encryptedKey, rsa, out plainText);
         }
 
         private IEnumerable<SecurityKey> GetSecurityKeys(EncryptedType encryptedType)
@@ -184,71 +152,5 @@ namespace Solid.IdentityModel.Xml
             }
             return keys;
         }
-
-        //private bool TryDecrypt(EncryptedData encryptedData, out byte[] plainText)
-        //{
-        //    var keys = GetDecryptionKeys(encryptedData.KeyInfo);
-        //    var xml = new EncryptedXml();
-        //    xml.Mode = SymmetricAlgorithmProvider.GetCipherMode(encryptedData.EncryptionMethod.KeyAlgorithm);
-        //    foreach(var key in keys)
-        //    {
-        //        try
-        //        {
-        //            using (var symmetric = SymmetricAlgorithmProvider.GetSymmetricAlgorithm(encryptedData.EncryptionMethod.KeyAlgorithm, key))
-        //            {
-        //                var pt = xml.DecryptData(encryptedData, symmetric);
-        //                plainText = pt;
-        //                return true;
-        //            }
-        //        }
-        //        catch(Exception ex)
-        //        {
-
-        //        }
-        //    }
-        //    return Out.False(out plainText);
-        //}
-
-        //private bool TryDecrypt(string algorithm, byte[] cipherText, KeyInfo keyInfo, out byte[] plainText)
-        //{
-        //    var keys = new List<SecurityKey>();
-        //    foreach (var clause in keyInfo.Cast<KeyInfoClause>())
-        //    {
-        //        if (clause is KeyInfoEncryptedKey encryptedKey && TryDecrypt(encryptedKey.EncryptedKey, out var symmetricKey))
-        //            keys.Add(new SymmetricSecurityKey(symmetricKey));
-        //        if (clause is KeyInfoName name)
-        //            keys.AddRange(_tokenValidationParameters.ResolveDecryptionKeys(kid: name.Value));
-        //        if (clause is KeyInfoX509Data x509)
-        //            keys.AddRange(x509.Certificates.Cast<X509Certificate2>().Select(cert => new X509SecurityKey(cert)));
-        //    }
-        //    return TryDecrypt(algorithm, cipherText, keys, out plainText);
-        //}
-
-        //private bool TryDecrypt(string algorithm, byte[] cipherText, IEnumerable<SecurityKey> keys, out byte[] plainText)
-        //{
-        //    foreach(var key in keys)
-        //    {
-        //        if(key is SymmetricSecurityKey symmetricKey)
-        //        {
-        //            using (var symmetric = SymmetricAlgorithmProvider.GetSymmetricAlgorithm(algorithm, symmetricKey))
-        //            using(var decryptor = symmetric.CreateDecryptor())
-        //            {
-        //                try
-        //                {
-        //                    var encryptedXml = new EncryptedXml();
-        //                   encryptedXml.DecryptData()
-        //                }
-        //                catch (Exception ex) { }
-        //            }
-        //        }
-        //        else
-        //        {
-        //            var crypto = key.CryptoProviderFactory ?? CryptoProviderFactory.Default;
-        //            if (!crypto.IsSupportedAlgorithm(algorithm) && !crypto.IsSupportedAlgorithm(algorithm, key)) continue;
-        //        }
-        //    }
-
-        //    return Out.False(out plainText);
-        //}
     }
 }
