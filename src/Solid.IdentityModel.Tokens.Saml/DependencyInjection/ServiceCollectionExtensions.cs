@@ -20,10 +20,11 @@ namespace Solid.IdentityModel.Tokens.DependencyInjection
             return services;
         }
 
-        public static IServiceCollection AddExtendedSaml2Serializer<TSerializer>(this IServiceCollection services)
-            where TSerializer : ExtendedSaml2Serializer
+        public static IServiceCollection AddSaml2Serializer<TSerializer>(this IServiceCollection services)
+            where TSerializer : Saml2Serializer
         {
-            services.TryAddTransient<Saml2Serializer, TSerializer>();
+            services.RemoveAll<Saml2Serializer>();
+            services.AddTransient<Saml2Serializer, TSerializer>();
             return services;
         }
     }
