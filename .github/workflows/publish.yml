@@ -31,8 +31,8 @@ jobs:
         run: dotnet test ./src/Solid.IdentityModel.sln --configuration Release --no-restore --no-build
       - name: Package
         run: dotnet pack ./src/Solid.IdentityModel.sln --configuration Release --no-build -p:Version=${{ env.package_version }} -o ./ 
-#      - name: Push
-#        run: |
-#          dotnet nuget push Solid.IdentityModel.Tokens.${{env.package_version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
-#          dotnet nuget push Solid.IdentityModel.Xml.${{env.package_version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
-#          dotnet nuget push Solid.IdentityModel.Tokens.Saml.${{env.package_version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
+      - name: Push
+        run: |
+          dotnet nuget push Solid.IdentityModel.Tokens.${{env.package_version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
+          dotnet nuget push Solid.IdentityModel.Xml.${{env.package_version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
+          dotnet nuget push Solid.IdentityModel.Tokens.Saml.${{env.package_version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
