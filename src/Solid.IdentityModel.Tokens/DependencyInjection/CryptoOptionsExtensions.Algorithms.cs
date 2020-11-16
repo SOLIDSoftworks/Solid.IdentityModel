@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Solid.IdentityModel.Tokens;
 using Solid.IdentityModel.Tokens.Crypto;
 using Solid.IdentityModel.Tokens.Crypto.Providers.Signature;
 using System;
@@ -8,7 +9,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Solid.IdentityModel.Tokens
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class CryptoOptionsExtensions_Algorithms
     {
