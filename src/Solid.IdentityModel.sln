@@ -15,8 +15,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Solid.IdentityModel.Xml", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Solid.IdentityModel.Tokens.Tests", "Solid.IdentityModel.Tokens.Tests\Solid.IdentityModel.Tokens.Tests.csproj", "{056CE516-18F1-4DC0-9FCC-B0E6C15FBA7D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Solid.IdentityModel.Xml.Tests", "Solid.IdentityModel.Xml.Tests\Solid.IdentityModel.Xml.Tests.csproj", "{7A5E7A14-5A31-4B39-88C5-5B8A4690B0C5}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,10 +41,6 @@ Global
 		{056CE516-18F1-4DC0-9FCC-B0E6C15FBA7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{056CE516-18F1-4DC0-9FCC-B0E6C15FBA7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{056CE516-18F1-4DC0-9FCC-B0E6C15FBA7D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7A5E7A14-5A31-4B39-88C5-5B8A4690B0C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7A5E7A14-5A31-4B39-88C5-5B8A4690B0C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7A5E7A14-5A31-4B39-88C5-5B8A4690B0C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7A5E7A14-5A31-4B39-88C5-5B8A4690B0C5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,7 +48,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{62E7CF3C-0B66-4A99-BDEC-1EFBF70C11EF} = {31FA5A02-4918-43E3-9EA7-56A08C8E15C3}
 		{056CE516-18F1-4DC0-9FCC-B0E6C15FBA7D} = {31FA5A02-4918-43E3-9EA7-56A08C8E15C3}
-		{7A5E7A14-5A31-4B39-88C5-5B8A4690B0C5} = {31FA5A02-4918-43E3-9EA7-56A08C8E15C3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2F2C149C-FB6D-4660-BA16-F377BEED16D7}

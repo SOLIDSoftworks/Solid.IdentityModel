@@ -36,6 +36,9 @@ namespace Solid.IdentityModel.Xml
             return !InnerReader.EOF;
         }
 
+        protected CryptoProviderFactory GetCrypto(SecurityKey key)
+            => key.CryptoProviderFactory ?? CryptoProviderFactory.Default;
+
         private void ProcessCurrentElement()
         {
             if(!ReferenceEquals(InnerReader, _inner)) // already decrypting
@@ -80,21 +83,22 @@ namespace Solid.IdentityModel.Xml
             var algorithm = encryptedType.EncryptionMethod.KeyAlgorithm;
             foreach(var key in keys)
             {
+                var crypto = GetCrypto(key);
+                if (!crypto.IsSupportedAlgorithm(algorithm, key)) continue;
+                var symmetric = null as SymmetricAlgorithm;
                 try
                 {
-                    if(encryptedType is EncryptedData encryptedData)
+                    if (encryptedType is EncryptedData encryptedData)
                     {
                         if (!(key is SymmetricSecurityKey symmetricKey)) continue;
-                        using (var symmetric = SymmetricAlgorithmProvider.GetSymmetricAlgorithm(algorithm, symmetricKey))
-                        {
-                            symmetric.IV = xml.GetDecryptionIV(encryptedData, algorithm);
-                            var pt = xml.DecryptData(encryptedData, symmetric);
-                            plainText = pt;
-                            return true;
-                        }
+                        symmetric = crypto.CreateSymmetricAlgorithm(symmetricKey, algorithm);
+                        symmetric.IV = xml.GetDecryptionIV(encryptedData, algorithm);
+                        var pt = xml.DecryptData(encryptedData, symmetric);
+                        plainText = pt;
+                        return true;
                     }
 
-                    if(encryptedType is EncryptedKey encryptedKey)
+                    if (encryptedType is EncryptedKey encryptedKey)
                     {
                         var pt = null as byte[];
                         if (key is X509SecurityKey x509 && TryDecryptKey(encryptedKey, x509.Certificate, out pt))
@@ -107,20 +111,26 @@ namespace Solid.IdentityModel.Xml
                             plainText = pt;
                             return true;
                         }
-                        else if(key is SymmetricSecurityKey symmetricKey)
+                        else if (key is SymmetricSecurityKey symmetricKey)
                         {
-                            using (var symmetric = SymmetricAlgorithmProvider.GetSymmetricAlgorithm(algorithm, symmetricKey))
-                            {
-                                pt = EncryptedXml.DecryptKey(encryptedKey.CipherData.CipherValue, symmetric);
-                                plainText = pt;
-                                return true;
-                            }
+                            symmetric = crypto.CreateSymmetricAlgorithm(symmetricKey, algorithm);
+                            pt = EncryptedXml.DecryptKey(encryptedKey.CipherData.CipherValue, symmetric);
+                            plainText = pt;
+                            return true;
                         }
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
 
+                }
+                finally
+                {
+                    if (symmetric != null)
+                    {
+                        crypto.ReleaseSymmetricAlgorithm(symmetric);
+                        symmetric = null;
+                    }
                 }
             }
             return Out.False(out plainText);

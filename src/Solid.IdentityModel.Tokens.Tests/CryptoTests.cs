@@ -54,11 +54,11 @@ namespace Solid.IdentityModel.Tokens.Tests
         }
         
         [Theory]
-        [InlineData("http://www.w3.org/2000/09/xmldsig#hmac-sha1")]
+        //[InlineData("http://www.w3.org/2000/09/xmldsig#hmac-sha1")]
         [InlineData(SecurityAlgorithms.HmacSha256Signature)]
         [InlineData(SecurityAlgorithms.HmacSha384Signature)]
         [InlineData(SecurityAlgorithms.HmacSha512Signature)]
-        [InlineData("H1")]
+        //[InlineData("H1")]
         [InlineData(SecurityAlgorithms.HmacSha256)]
         [InlineData(SecurityAlgorithms.HmacSha384)]
         [InlineData(SecurityAlgorithms.HmacSha512)]

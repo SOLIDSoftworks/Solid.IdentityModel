@@ -133,6 +133,16 @@ namespace Solid.IdentityModel.Tokens.Crypto
                     return CryptoProviderFactory.CreateAuthenticatedEncryptionProvider(args.ElementAtOrDefault(0) as SecurityKey, algorithm);
             }
 
+            if (type.HasFlag(AlgorithmType.Symmetric))
+            {
+                if (_options.SupportedSymmetricAlgorithms.TryGetValue(algorithm, out var symmetricAlgorithmDescriptor))
+                {
+                    _logger.LogDebug($"Creating {nameof(SymmetricAlgorithm)} for '{algorithm}'");
+                    return symmetricAlgorithmDescriptor.Factory(_services, args);
+                }
+                // default crypto provider factory does not support symmetric algorithms only
+            }
+
             throw new NotSupportedException(algorithm);
         }
 
@@ -171,6 +181,7 @@ namespace Solid.IdentityModel.Tokens.Crypto
         private bool IsSupportedByCustomCryptoProvider(string algorithm)
         {
             return
+                _options.SupportedSymmetricAlgorithms.ContainsKey(algorithm) ||
                 _options.SupportedHashAlgorithms.ContainsKey(algorithm) ||
                 _options.SupportedSignatureAlgorithms.ContainsKey(algorithm) ||
                 _options.SupportedEncryptionAlgorithms.ContainsKey(algorithm) ||
@@ -186,7 +197,8 @@ namespace Solid.IdentityModel.Tokens.Crypto
             KeyedHash = 4, 
             KeyWrap = 8,
             Encryption = 16,
-            Any = Hash | Signature | KeyedHash | KeyWrap | Encryption
+            Symmetric = 32,
+            Any = Hash | Signature | KeyedHash | KeyWrap | Encryption | Symmetric
         }
     }
 }

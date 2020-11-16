@@ -38,7 +38,13 @@ namespace Solid.IdentityModel.Tokens
 
         public CryptoOptions AddSupportedHashAlgorithm(string algorithm, Func<IServiceProvider, HashAlgorithm> factory)
         {
-            SupportedHashAlgorithms[algorithm] = new HashAlgorithmDescriptor(algorithm, (services, __) => factory(services));
+            SupportedHashAlgorithms[algorithm] = new HashAlgorithmDescriptor(algorithm, (services, _) => factory(services));
+            return this;
+        }
+
+        public CryptoOptions AddSupportedSymmetricAlgorithm(string algorithm, Func<IServiceProvider, SymmetricAlgorithm> factory)
+        {
+            SupportedSymmetricAlgorithms[algorithm] = new SymmetricAlgorithmDescriptor(algorithm, (services, _) => factory(services));
             return this;
         }
 
@@ -76,6 +82,7 @@ namespace Solid.IdentityModel.Tokens
 
         internal IDictionary<string, string> EncryptionAlgorithmMap { get; } = new Dictionary<string, string>();
 
+        internal IDictionary<string, SymmetricAlgorithmDescriptor> SupportedSymmetricAlgorithms { get; } = new Dictionary<string, SymmetricAlgorithmDescriptor>();
         internal IDictionary<string, HashAlgorithmDescriptor> SupportedHashAlgorithms { get; } = new Dictionary<string, HashAlgorithmDescriptor>();
         internal IDictionary<string, SignatureProviderDescriptor> SupportedSignatureAlgorithms { get; } = new Dictionary<string, SignatureProviderDescriptor>();
         internal IDictionary<string, KeyWrapProviderDescriptor> SupportedKeyWrapAlgorithms { get; } = new Dictionary<string, KeyWrapProviderDescriptor>();

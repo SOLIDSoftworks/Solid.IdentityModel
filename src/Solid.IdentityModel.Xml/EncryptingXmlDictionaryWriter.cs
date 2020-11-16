@@ -21,8 +21,12 @@ namespace Solid.IdentityModel.Xml
         private XmlDictionaryWriter _writer;
         private EncryptingCredentials _credentials;
         private StartEncryptionDelegate _startEncryption;
+        private int _encryptedElements;
         private int _elements;
         private MemoryStream _stream;
+        private XmlDictionaryWriter _innerWriter;
+        private MemoryStream _encryptedStream;
+        private XmlDictionaryWriter _encryptingWriter;
 
         protected CryptoProviderFactory Crypto => _credentials.CryptoProviderFactory ?? _credentials.Key.CryptoProviderFactory ?? CryptoProviderFactory.Default;
 
@@ -78,86 +82,139 @@ namespace Solid.IdentityModel.Xml
             _credentials = credentials;
             _startEncryption = startEncryption;
 
+            var settings = _writer.Settings ?? new XmlWriterSettings { OmitXmlDeclaration = true, Encoding = new UTF8Encoding(false) };
+
             _elements = 0;
             _stream = new MemoryStream();
-            InnerWriter = CreateDictionaryWriter(Create(_stream, _writer.Settings));
+            _innerWriter = CreateDictionaryWriter(Create(_stream, settings)); 
+            _encryptedStream = new MemoryStream();
+            _encryptingWriter = CreateDictionaryWriter(Create(_encryptedStream, settings));
+            InnerWriter = _innerWriter;
         }
 
         public override void WriteStartElement(string prefix, string localName, string ns)
         {
-            if(_elements > 0 || _startEncryption(prefix, localName, ns))
-                _elements++;
+            _elements++;
+            if (_encryptedElements > 0 || _startEncryption(prefix, localName, ns))
+            {
+                base.Flush();
+                InnerWriter = _encryptingWriter;
+                _encryptedElements++;
+            }
             base.WriteStartElement(prefix, localName, ns);
         }
 
         public override void WriteFullEndElement()
         {
             base.WriteFullEndElement();
-            if (--_elements == 0)
-            {
-                base.Flush();
-                Encrypt();
-            }
+            HandleEndElement();
         }
 
         public override void WriteEndElement()
         {
             base.WriteEndElement();
+            HandleEndElement();
+        }
+
+        private void HandleEndElement()
+        {
+            if (_encryptedElements > 0)
+            {
+                if (--_encryptedElements == 0)
+                {
+                    base.Flush();
+                    InnerWriter = _innerWriter;
+                    Encrypt();
+                    _encryptingWriter.Dispose();
+                }
+            }
             if (--_elements == 0)
             {
                 base.Flush();
-                Encrypt();
+                Complete();
             }
+        }
+
+        private void Complete()
+        {
+            _stream.Position = 0;
+            using (var reader = XmlReader.Create(_stream, new XmlReaderSettings { CloseInput = false }))
+                _writer.WriteNode(reader, true);
         }
 
         private void Encrypt()
         {
-            _stream.Position = 0;
+            _encryptedStream.Position = 0;
             var algorithm = _credentials.Enc;
 
             var document = new XmlDocument();
-            document.Load(_stream);
+            document.Load(_encryptedStream);
 
-            using (var symmetric = GetSymmetricAlgorithm(algorithm))
+            var symmetric = Crypto.CreateSymmetricAlgorithm(algorithm);
+            var xml = new EncryptedXml();
+            xml.Mode = symmetric.Mode;
+            var cipherText = xml.EncryptData(document.DocumentElement, symmetric, false);
+
+            var keyInfo = new KeyInfo();
+            var data = new EncryptedData
             {
-                var xml = new EncryptedXml();
-                xml.Mode = SymmetricAlgorithmProvider.GetCipherMode(algorithm);
-                var cipherText = xml.EncryptData(document.DocumentElement, symmetric, false);
+                Type = EncryptedXml.XmlEncElementUrl,
+                EncryptionMethod = new EncryptionMethod(algorithm),
+                CipherData = new CipherData { CipherValue = cipherText }
+            };
 
-                var keyInfo = new KeyInfo();
-                var data = new EncryptedData
-                {
-                    Type = EncryptedXml.XmlEncElementUrl,
-                    EncryptionMethod = new EncryptionMethod(algorithm),
-                    CipherData = new CipherData { CipherValue = cipherText }
-                };
+            if (_credentials.Key is RsaSecurityKey rsa)
+                throw new NotSupportedException("RSA security not supported for now.");
+            else if (_credentials.Key is X509SecurityKey x509)
+                keyInfo.AddClause(CreateEncryptedKeyClause(symmetric.Key, x509.Certificate, document));
+            else if (!string.IsNullOrEmpty(_credentials.Key.KeyId))
+                keyInfo.AddClause(new KeyInfoName(_credentials.Key.KeyId));
 
-                if (_credentials.Key is RsaSecurityKey rsa)
-                    throw new NotSupportedException("RSA security not supported for now.");
-                else if (_credentials.Key is X509SecurityKey x509)
-                    keyInfo.AddClause(CreateEncryptedKeyClause(symmetric.Key, x509.Certificate, document));
-                else if (!string.IsNullOrEmpty(_credentials.Key.KeyId))
-                    keyInfo.AddClause(new KeyInfoName(_credentials.Key.KeyId));
+            if (keyInfo.Cast<KeyInfoClause>().Any())
+                data.KeyInfo = keyInfo;
 
-                if (keyInfo.Cast<KeyInfoClause>().Any())
-                    data.KeyInfo = keyInfo;
+            var element = data.GetXml();
 
-                var element = data.GetXml();
-                _writer.WriteNode(element.CreateNavigator(), true);
-            }
+            //element = AddDigestMethodToEncryptionMethod(element, "http://www.w3.org/2000/09/xmldsig#sha1");
+
+            WriteNode(element.CreateNavigator(), true);
+
+            Crypto.ReleaseSymmetricAlgorithm(symmetric);
         }
+
+        //public static XmlElement AddDigestMethodToEncryptionMethod(XmlElement element, string digestMethod)
+        //{
+        //    var encryptionMethods = element
+        //        .SelectNodes("//*")
+        //        .OfType<XmlElement>()
+        //        .Where(e => e.LocalName == "EncryptionMethod")
+        //        .Where(e =>
+        //        {
+        //            var algorithm = e.GetAttribute("Algorithm");
+        //            return algorithm == EncryptedXml.XmlEncRSAOAEPUrl;
+        //        })
+        //    ;
+        //    foreach (var encryptionMethod in encryptionMethods)
+        //    {
+        //        var digest = element.OwnerDocument.CreateElement("DigestMethod", "http://www.w3.org/2000/09/xmldsig#");
+        //        digest.SetAttribute("Algorithm", digestMethod);
+        //        encryptionMethod.AppendChild(digest);
+        //    }
+        //    return element;
+        //}
 
         private KeyInfoClause CreateEncryptedKeyClause(byte[] key, X509Certificate2 certificate, XmlDocument document)
         {
             var keyInfo = new KeyInfo();
-            keyInfo.AddClause(CreateKeyInfoClause(certificate, document));
+            keyInfo.AddClause(CreateKeyInfoClause(certificate, document, out _));
             using (var rsa = certificate.GetRSAPublicKey())
             {
-                var cipherValue = EncryptedXml.EncryptKey(key, rsa, UseRsaOaep);
+                var useRsaOaep = UseRsaOaep;
+                var cipherValue = EncryptedXml.EncryptKey(key, rsa, useRsaOaep);
                 var encryptedKey = new EncryptedKey
                 {
                     CipherData = new CipherData { CipherValue = cipherValue },
-                    EncryptionMethod = new EncryptionMethod(EncryptedXml.XmlEncRSAOAEPUrl),
+                    EncryptionMethod = new EncryptionMethod(_credentials.Alg),
                     KeyInfo = keyInfo
                 };
 
@@ -165,7 +222,7 @@ namespace Solid.IdentityModel.Xml
             }
         }
 
-        private KeyInfoClause CreateKeyInfoClause(X509Certificate2 certificate, XmlDocument document)
+        private KeyInfoClause CreateKeyInfoClause(X509Certificate2 certificate, XmlDocument document, out string digest)
         {
             const string algorithm = "http://www.w3.org/2000/09/xmldsig#sha1";
             if (Crypto.IsSupportedAlgorithm(algorithm))
@@ -174,19 +231,26 @@ namespace Solid.IdentityModel.Xml
                 var securityTokenReference = document.CreateElement(WsSecurityConstants.WsSecurity10.Prefix, "SecurityTokenReference", WsSecurityConstants.WsSecurity10.Namespace);
                 var keyIdentifier = document.CreateElement(WsSecurityConstants.WsSecurity10.Prefix, "KeyIdentifier", WsSecurityConstants.WsSecurity10.Namespace);
                 keyIdentifier.SetAttribute("ValueType", "http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#ThumbprintSHA1");
-                keyIdentifier.InnerText = Convert.ToBase64String(sha1.ComputeHash(certificate.GetCertHash())); securityTokenReference.AppendChild(keyIdentifier);
+                keyIdentifier.InnerText = GetCertificateThumbprintSha1(certificate);
+                securityTokenReference.AppendChild(keyIdentifier);
+                digest = algorithm;
                 return new KeyInfoNode(securityTokenReference);
             }
             else
             {
+                digest = null;
                 return new KeyInfoX509Data(certificate, X509IncludeOption.None);
             }
         }
-        private SymmetricAlgorithm GetSymmetricAlgorithm(string algorithm)
+
+        private string GetCertificateThumbprintSha1(X509Certificate2 certificate)
         {
-            if (_credentials?.Key is SymmetricSecurityKey symmetric)
-                return SymmetricAlgorithmProvider.GetSymmetricAlgorithm(algorithm, symmetric);
-            return SymmetricAlgorithmProvider.GetSymmetricAlgorithm(algorithm);
+            var publicKey = certificate.Export(X509ContentType.Cert);
+            using (var sha1 = SHA1.Create())
+            {
+                var hashed = sha1.ComputeHash(publicKey);
+                return Convert.ToBase64String(hashed);
+            }
         }
 
         // shim

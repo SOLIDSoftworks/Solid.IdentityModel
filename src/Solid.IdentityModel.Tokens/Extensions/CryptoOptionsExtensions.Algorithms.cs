@@ -19,12 +19,23 @@ namespace Solid.IdentityModel.Tokens
                 .MapKeyWrapAlgorithm(SecurityAlgorithms.RsaOaepKeyWrap, SecurityAlgorithms.RsaOAEP)
                 .MapKeyWrapAlgorithm("http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p", SecurityAlgorithms.RsaOAEP)
 
-        // encryption
+                .AddAes128CbcSupport()
+                .AddAes192CbcSupport()
+                .AddAes256CbcSupport()
         ;
 
-        //public static CryptoOptions AddAes128Support(this CryptoOptions options)
-        //    => options
-        //    .MapEncryptionAlgorithm(SecurityAlgorithms.Aes128Encryption, SecurityAlgorithms.Aes128CbcHmacSha256)
+        public static CryptoOptions AddAes128CbcSupport(this CryptoOptions options)
+            => options.AddAesSupport(SecurityAlgorithms.Aes128Encryption, 128, CipherMode.CBC)
+        ;
+
+        public static CryptoOptions AddAes192CbcSupport(this CryptoOptions options)
+            => options.AddAesSupport(SecurityAlgorithms.Aes192Encryption, 192, CipherMode.CBC)
+        ;
+
+        public static CryptoOptions AddAes256CbcSupport(this CryptoOptions options)
+            => options.AddAesSupport(SecurityAlgorithms.Aes256Encryption, 256, CipherMode.CBC)
+        ;
+
         public static CryptoOptions AddSha1Support(this CryptoOptions options)
             => options
             .AddSupportedHashAlgorithm("SHA1", _ => SHA1.Create())
@@ -39,6 +50,17 @@ namespace Solid.IdentityModel.Tokens
                 return new RsaSignatureProvider(key, "RS1", HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1, logger);
             })
             .MapSignatureAlgorithm("http://www.w3.org/2000/09/xmldsig#rsa-sha1", "RS1")
+        ;
+
+        private static CryptoOptions AddAesSupport(this CryptoOptions options, string algorithm, int keySize, CipherMode mode)
+            => options
+            .AddSupportedSymmetricAlgorithm(algorithm, _ =>
+            {
+                var aes = Aes.Create();
+                aes.Mode = mode;
+                aes.KeySize = keySize;
+                return aes;
+            })
         ;
     }
 }
