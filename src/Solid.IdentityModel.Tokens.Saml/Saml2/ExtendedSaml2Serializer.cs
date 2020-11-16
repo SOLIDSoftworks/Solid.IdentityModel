@@ -32,8 +32,9 @@ namespace Solid.IdentityModel.Tokens.Saml2
                 var fqtn = attribute.AttributeValueXsiType?.Split('#');
                 if (fqtn?.Length == 2)
                 {
-                    dictionaryWriter.WriteAttributeString("xmlns", "xs", null, fqtn[0]);
-                    //dictionaryWriter.WriteXmlnsAttribute("xs", fqtn[0]);
+                    if (string.IsNullOrEmpty(dictionaryWriter.LookupPrefix("xs")))
+                        dictionaryWriter.WriteAttributeString("xmlns", "xs", null, fqtn[0]);
+
                     dictionaryWriter.WriteStartAttribute("xsi", "type", xsi);
                     dictionaryWriter.WriteQualifiedName(fqtn[1], fqtn[0]);
                     dictionaryWriter.WriteEndAttribute();
