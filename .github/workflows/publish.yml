@@ -2,7 +2,7 @@ name: publish 0.1.x to nuget
 on:
   push:
     branches:
-      - master # Default release branch
+      - main # Default release branch
 
 env:
   version: 0.1.${{ github.run_number }}
