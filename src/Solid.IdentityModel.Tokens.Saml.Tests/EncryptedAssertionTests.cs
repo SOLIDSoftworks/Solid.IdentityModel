@@ -72,6 +72,23 @@ namespace Solid.IdentityModel.Tokens.Saml.Tests
         }
 
         [Fact]
+        public void ShouldCreateEncryptedTokenWithoutNameId()
+        {
+            var handler = new Saml2EncryptedSecurityTokenHandler();
+            var descriptor = CreateDescriptor(nameIdentifier: null);
+
+            var token = handler.CreateToken(descriptor);
+
+            Assert.NotNull(token);
+            Assert.IsType<Saml2EncryptedSecurityToken>(token);
+
+            var encrypted = token as Saml2EncryptedSecurityToken;
+            Assert.NotNull(encrypted.Assertion);
+            Assert.NotNull(encrypted.EncryptingCredentials);
+            Assert.Null(encrypted.EncryptedData);
+        }
+
+        [Fact]
         public void ShouldCreateEncryptedToken()
         {
             var handler = new Saml2EncryptedSecurityTokenHandler();
@@ -161,15 +178,15 @@ namespace Solid.IdentityModel.Tokens.Saml.Tests
             return parameters;
         }
 
-        private SecurityTokenDescriptor CreateDescriptor(string decryptionCertificateBase64 = _decryptionCertificateBase64, string signingCertificateBase64 = _signingCertificateBase64)
+        private SecurityTokenDescriptor CreateDescriptor(string name = "user", string nameIdentifier = "user-id", string decryptionCertificateBase64 = _decryptionCertificateBase64, string signingCertificateBase64 = _signingCertificateBase64)
         {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, "user-id"),
-                new Claim(ClaimTypes.Name, "user"),
-                //new Claim(ClaimTypes.AuthenticationMethod, AuthenticationMethods.Password),
-                //AuthenticationInstantClaim.Now
-            };
+            var claims = new List<Claim>();
+
+            if (name != null)
+                claims.Add(new Claim(ClaimTypes.Name, name));
+            if (nameIdentifier != null)
+                claims.Add(new Claim(ClaimTypes.NameIdentifier, nameIdentifier));
+
             var identity = new ClaimsIdentity(claims, "Test", ClaimTypes.NameIdentifier, ClaimTypes.Role);
 
             var encryptionCertificate = new X509Certificate2(Convert.FromBase64String(decryptionCertificateBase64));

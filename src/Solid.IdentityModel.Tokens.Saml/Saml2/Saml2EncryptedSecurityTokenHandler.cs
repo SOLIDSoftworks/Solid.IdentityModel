@@ -174,7 +174,7 @@ namespace Solid.IdentityModel.Tokens.Saml2
         {
             var subject = base.CreateSubject(tokenDescriptor);
 
-            if (subject.NameId.Format == null)
+            if (subject.NameId != null && subject.NameId.Format == null)
                 subject.NameId.Format = Saml2Constants.NameIdentifierFormats.Unspecified;
 
             //if (tokenDescriptor is RequestedSecurityTokenDescriptor extended && extended.ProofKey != null)
