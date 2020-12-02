@@ -24,7 +24,7 @@ namespace Solid.IdentityModel.Tokens
 
         public EncryptingCredentials CreateCredentials(SecurityKey key)
         {
-            if (KeyWrapAlgorithm != null)
+            if (KeyWrapAlgorithm == null)
             {
                 if (!(key is SymmetricSecurityKey symmetric))
                     throw new ArgumentException("Symmetric key required when not using key wrap.");
