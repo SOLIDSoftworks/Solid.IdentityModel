@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Solid.IdentityModel</RootNamespace>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,6 +13,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Solid.IdentityModel.Tokens\Solid.IdentityModel.Tokens.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Tokens\Xml\" />
   </ItemGroup>
 
 </Project>
