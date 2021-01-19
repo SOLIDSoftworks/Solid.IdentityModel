@@ -10,7 +10,6 @@ namespace Solid.IdentityModel.Tokens
 {
     public class CryptoOptions
     {
-        public bool UseDefaultCryptoProviderFactory { get; set; } = true;
         public CryptoOptions MapHashAlgorithm(string algorithmFrom, string algorithmTo)
         {
             HashAlgorithmMap[algorithmFrom] = algorithmTo;

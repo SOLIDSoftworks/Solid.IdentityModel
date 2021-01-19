@@ -20,18 +20,11 @@ namespace Microsoft.Extensions.DependencyInjection
             services.TryAddSingleton<CustomCryptoProvider>();
             services.TryAddSingleton<CryptoProviderFactory>(p =>
             {
-                var options = p.GetRequiredService<IOptions<CryptoOptions>>().Value;
                 var custom = p.GetRequiredService<CustomCryptoProvider>();
-
-                var factory = null as CryptoProviderFactory;
-                if (options.UseDefaultCryptoProviderFactory)
-                    factory = CryptoProviderFactory.Default;
-                else
-                    factory = new CryptoProviderFactory();
-
-                factory.CustomCryptoProvider = p.GetRequiredService<CustomCryptoProvider>();
-                return factory;
+                CryptoProviderFactory.Default.CustomCryptoProvider = p.GetRequiredService<CustomCryptoProvider>();
+                return CryptoProviderFactory.Default;
             });
+
             return services;
         }
     }
