@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Solid.IdentityModel.Tokens;
 using Solid.IdentityModel.Tokens.Crypto;
@@ -19,7 +20,15 @@ namespace Microsoft.Extensions.DependencyInjection
             services.TryAddSingleton<CustomCryptoProvider>();
             services.TryAddSingleton<CryptoProviderFactory>(p =>
             {
-                var factory = new CryptoProviderFactory();
+                var options = p.GetRequiredService<IOptions<CryptoOptions>>().Value;
+                var custom = p.GetRequiredService<CustomCryptoProvider>();
+
+                var factory = null as CryptoProviderFactory;
+                if (options.UseDefaultCryptoProviderFactory)
+                    factory = CryptoProviderFactory.Default;
+                else
+                    factory = new CryptoProviderFactory();
+
                 factory.CustomCryptoProvider = p.GetRequiredService<CustomCryptoProvider>();
                 return factory;
             });

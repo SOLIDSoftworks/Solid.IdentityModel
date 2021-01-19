@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Solid.IdentityModel.Tokens.Crypto;
 using System;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -19,7 +20,6 @@ namespace Solid.IdentityModel.Tokens.Tests
             IdentityModelEventSource.ShowPII = true;
         }
 
-
         [Theory]
         [InlineData("http://www.w3.org/2000/09/xmldsig#sha1")]
         [InlineData(SecurityAlgorithms.Sha256Digest)]
@@ -35,6 +35,15 @@ namespace Solid.IdentityModel.Tokens.Tests
             Assert.True(crypto.IsSupportedAlgorithm(algorithm));
         }
 
+        [Theory]
+        [InlineData(SecurityAlgorithms.Aes128Encryption)]
+        [InlineData(SecurityAlgorithms.Aes192Encryption)]
+        [InlineData(SecurityAlgorithms.Aes256Encryption)]
+        public void ShouldSupportSymmetricAlgorithm(string algorithm)
+        {
+            var crypto = CreateCryptoProviderFactory();
+            Assert.True(crypto.IsSupportedAlgorithm(algorithm));
+        }
 
         [Theory]
         [InlineData("http://www.w3.org/2000/09/xmldsig#rsa-sha1")]
@@ -76,7 +85,7 @@ namespace Solid.IdentityModel.Tokens.Tests
         [Theory]
         [InlineData(SecurityAlgorithms.RsaOAEP)]
         [InlineData(SecurityAlgorithms.RsaOaepKeyWrap)]
-        [InlineData("http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p")]
+        [InlineData(KeyWrapAlgorithms.RsaOaepMgf1pAlgorithm)]
         public void ShouldSupportKeyWrapAlgorithm(string algorithm)
         {
             var certificate = new X509Certificate2(Convert.FromBase64String(CertificateBase64));
@@ -97,6 +106,19 @@ namespace Solid.IdentityModel.Tokens.Tests
 
             Assert.NotNull(hashAlgorithm);
             Assert.IsAssignableFrom(type, hashAlgorithm);
+        }
+
+        [Theory]
+        [InlineData(SecurityAlgorithms.Aes128Encryption, typeof(Aes))]
+        [InlineData(SecurityAlgorithms.Aes192Encryption, typeof(Aes))]
+        [InlineData(SecurityAlgorithms.Aes256Encryption, typeof(Aes))]
+        public void ShouldGetSymmetricAlgorithm(string algorithm, Type type)
+        {
+            var crypto = CreateCryptoProviderFactory();
+            var symmetricAlgorithm = crypto.CreateSymmetricAlgorithm(algorithm);
+
+            Assert.NotNull(symmetricAlgorithm);
+            Assert.IsAssignableFrom(type, symmetricAlgorithm);
         }
 
         [Theory]

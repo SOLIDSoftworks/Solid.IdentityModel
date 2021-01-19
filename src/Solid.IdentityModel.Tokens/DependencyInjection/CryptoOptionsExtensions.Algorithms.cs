@@ -18,7 +18,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSha1Support()
                 .AddRsaWithSha1Support()
                 .MapKeyWrapAlgorithm(SecurityAlgorithms.RsaOaepKeyWrap, SecurityAlgorithms.RsaOAEP)
-                .MapKeyWrapAlgorithm("http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p", SecurityAlgorithms.RsaOAEP)
+                .MapKeyWrapAlgorithm(KeyWrapAlgorithms.RsaOaepMgf1pAlgorithm, SecurityAlgorithms.RsaOAEP)
 
                 .AddAes128CbcSupport()
                 .AddAes192CbcSupport()

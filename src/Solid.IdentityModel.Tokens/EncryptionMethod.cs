@@ -33,8 +33,8 @@ namespace Solid.IdentityModel.Tokens
             return new EncryptingCredentials(key, KeyWrapAlgorithm, EncryptionAlgorithm);
         }
 
-        public static EncryptionMethod Aes128CbcWithRsaOaepKeyWrap = new EncryptionMethod(EncryptionAlgorithms.Aes128Cbc, KeyWrapAlgorithms.RsaOaep);
-        public static EncryptionMethod Aes192CbcWithRsaOaepKeyWrap = new EncryptionMethod(EncryptionAlgorithms.Aes192Cbc, KeyWrapAlgorithms.RsaOaep);
-        public static EncryptionMethod Aes256CbcWithRsaOaepKeyWrap = new EncryptionMethod(EncryptionAlgorithms.Aes256Cbc, KeyWrapAlgorithms.RsaOaep);
+        public static EncryptionMethod Aes128CbcWithRsaOaepKeyWrap = new EncryptionMethod(EncryptionAlgorithms.Aes128Cbc, KeyWrapAlgorithms.RsaOaepMgf1p);
+        public static EncryptionMethod Aes192CbcWithRsaOaepKeyWrap = new EncryptionMethod(EncryptionAlgorithms.Aes192Cbc, KeyWrapAlgorithms.RsaOaepMgf1p);
+        public static EncryptionMethod Aes256CbcWithRsaOaepKeyWrap = new EncryptionMethod(EncryptionAlgorithms.Aes256Cbc, KeyWrapAlgorithms.RsaOaepMgf1p);
     }
 }
