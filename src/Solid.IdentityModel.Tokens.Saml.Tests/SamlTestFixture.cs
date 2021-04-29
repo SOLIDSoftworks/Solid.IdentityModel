@@ -1,11 +1,16 @@
 ﻿using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.Tokens.Saml2;
+using Microsoft.IdentityModel.Xml;
+using Solid.IdentityModel.Xml;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
+using Xunit;
 
 namespace Solid.IdentityModel.Tokens.Saml.Tests
 {
@@ -69,7 +74,7 @@ namespace Solid.IdentityModel.Tokens.Saml.Tests
             return parameters;
         }
 
-        public SecurityTokenDescriptor CreateDescriptor(string name = "user", string nameIdentifier = "user-id", SecurityKey encryptionKey = null, SecurityKey signingKey = null, SecurityKey proofKey = null, SecurityKey proofKeyEncryptionKey = null)
+        public SecurityTokenDescriptor CreateDescriptor(string name = "user", string nameIdentifier = "user-id", SecurityKey encryptionKey = null, SecurityKey signingKey = null, SecurityKey proofKey = null, bool encryptProofKey = true)
         {
             if (encryptionKey == null)
                 encryptionKey = DefaultEncryptionKey;
@@ -84,23 +89,25 @@ namespace Solid.IdentityModel.Tokens.Saml.Tests
 
             var identity = new ClaimsIdentity(claims, "Test", ClaimTypes.NameIdentifier, ClaimTypes.Role);
 
+            var encryptingCredentials = new EncryptingCredentials(encryptionKey, SecurityAlgorithms.RsaOaepKeyWrap, SecurityAlgorithms.Aes128Encryption);
             var descriptor = new RequestedSecurityTokenDescriptor
             {
                 Issuer = "urn:tests",
                 Audience = "urn:unittests",
-                EncryptingCredentials = new EncryptingCredentials(encryptionKey, SecurityAlgorithms.RsaOaepKeyWrap, SecurityAlgorithms.Aes128Encryption),
+                EncryptingCredentials = encryptingCredentials,
                 SigningCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.RsaSha256Signature, SecurityAlgorithms.Sha256Digest),
                 IssuedAt = DateTime.UtcNow,
                 Expires = DateTime.UtcNow.AddMinutes(5),
                 NotBefore = DateTime.UtcNow,
                 Subject = identity,
-                ProofKey = proofKey
+                ProofKey = proofKey,
+                ProofKeyEncryptingCredentials = encryptProofKey ? encryptingCredentials : null
             };
 
             return descriptor;
         }
 
-        private X509Certificate2 GenerateCertificate(DateTime? notBefore = null, DateTime? notAfter = null)
+        public X509Certificate2 GenerateCertificate(DateTime? notBefore = null, DateTime? notAfter = null)
         {
             var name = Guid.NewGuid().ToString("N");
             var builder = new SubjectAlternativeNameBuilder();
@@ -129,6 +136,36 @@ namespace Solid.IdentityModel.Tokens.Saml.Tests
                 var bytes = certificate.Export(X509ContentType.Pfx);
                 return new X509Certificate2(bytes, null as string, X509KeyStorageFlags.Exportable); // don't ask me why, but this is required for some tests to work; i.e. Mtls tests
             }
+        }
+
+        public void AssertContainsSymmetricKey(SecurityToken securityToken, SymmetricSecurityKey symmetric, SecurityKey decryptionKey = null)
+        {
+            var keyInfo = GetKeyInfo(securityToken);
+
+            if (keyInfo is BinarySecretKeyInfo binary)
+                Assert.Equal(symmetric.Key, binary.Key);
+            else if (keyInfo is EncryptedKeyInfo encrypted)
+                Assert.Equal(symmetric.Key, encrypted.Decrypt(decryptionKey ?? _lazyDecryptionKey.Value));
+            else
+                Assert.True(false, "Unable to assert key info");
+        }
+
+        private KeyInfo GetKeyInfo(SecurityToken securityToken)
+        {
+            if (!(securityToken is Saml2SecurityToken saml2))
+            {
+                Assert.True(false, "Passed security token is not a saml2 security token");
+                return null;
+            }
+
+            var assertion = saml2.Assertion;
+            var subject = assertion.Subject;
+            var holderOfKey = subject.SubjectConfirmations.FirstOrDefault(c => c.Method == Saml2Constants.ConfirmationMethods.HolderOfKey);
+            Assert.NotNull(holderOfKey);
+
+            var keyInfo = holderOfKey.SubjectConfirmationData.KeyInfos.FirstOrDefault();
+            Assert.NotNull(keyInfo);
+            return keyInfo;
         }
     }
 }

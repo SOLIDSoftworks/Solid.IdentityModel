@@ -1,39 +1,40 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Protocols.WsTrust;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.IdentityModel.Tokens.Saml2;
+using Microsoft.IdentityModel.Xml;
 using Solid.IdentityModel.Xml;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Xml;
+using KeyInfo = Microsoft.IdentityModel.Xml.KeyInfo;
 
 namespace Solid.IdentityModel.Tokens.Saml2
 {
-    public class Saml2EncryptedSecurityTokenHandler : Saml2SecurityTokenHandler
+    public class Saml2EncryptedSecurityTokenHandler : ExtendedSaml2SecurityTokenHandler
     {
         private static readonly string EncryptedAssertion = "EncryptedAssertion";
 
-        protected X509SecurityKey DecryptionKey { get; }
-
-        public Saml2EncryptedSecurityTokenHandler(Saml2Serializer serializer)
-            : base()
+        public Saml2EncryptedSecurityTokenHandler(ExtendedSaml2Serializer serializer, Saml2Options options)
+            : base(serializer, options)
         {
-            Serializer = new ExtendedSaml2Serializer();
         }
 
         public Saml2EncryptedSecurityTokenHandler()
-            : this(new ExtendedSaml2Serializer())
+            : base()
         {
         }
 
-        public Saml2EncryptedSecurityTokenHandler(X509SecurityKey decryptionKey)
-            : this()
+        public Saml2EncryptedSecurityTokenHandler(IOptionsMonitor<Saml2Options> monitor)
+            : base(monitor)
         {
-            DecryptionKey = decryptionKey;
         }
 
         public override bool CanReadToken(XmlReader reader)
@@ -54,29 +55,26 @@ namespace Solid.IdentityModel.Tokens.Saml2
 
         public override Saml2SecurityToken ReadSaml2Token(XmlReader reader)
         {
-            if (DecryptionKey != null)
-                return ReadSaml2Token(reader, CreateDefaultTokenValidationParameters());
+            var parameters = CreateDefaultTokenValidationParameters();
+            if (parameters != null)
+                return ReadSaml2Token(reader, parameters);
             if(IsEncryptedAssertion(reader))
                 throw new InvalidOperationException($"Unable to read SAML2 encrypted assertion without the decryption key.");
             return base.ReadSaml2Token(reader);
         }
 
-        public virtual Saml2SecurityToken ReadSaml2Token(XmlReader reader, TokenValidationParameters validationParameters)
+        public override Saml2SecurityToken ReadSaml2Token(XmlReader reader, TokenValidationParameters validationParameters)
         {
             if (IsEncryptedAssertion(reader))
             {
-                reader.Read();
-                using(var sub = reader.ReadSubtree())
+                using (var decrypting = new DecryptingXmlDictionaryReader(reader, validationParameters))
                 {
-                    sub.MoveToContent();
-                    using (var decrypting = new DecryptingXmlDictionaryReader(sub, validationParameters))
-                    {
-                        var token = base.ReadSaml2Token(decrypting);
-                        return new Saml2EncryptedSecurityToken(token, decrypting.EncryptedData);
-                    }
+                    decrypting.Read();
+                    var token = base.ReadSaml2Token(decrypting, validationParameters);
+                    return new Saml2EncryptedSecurityToken(token, decrypting.EncryptedData);
                 }
             }
-            return base.ReadSaml2Token(reader);
+            return base.ReadSaml2Token(reader, validationParameters);
         }
 
         public override ClaimsPrincipal ValidateToken(XmlReader reader, TokenValidationParameters validationParameters, out SecurityToken validatedToken)
@@ -91,7 +89,7 @@ namespace Solid.IdentityModel.Tokens.Saml2
                     sub.MoveToContent();
                     using (var decrypting = new DecryptingXmlDictionaryReader(sub, validationParameters))
                     {
-                        var saml2 = base.ReadSaml2Token(decrypting);
+                        var saml2 = base.ReadSaml2Token(decrypting, validationParameters);
                         token = new Saml2EncryptedSecurityToken(saml2, decrypting.EncryptedData);
 
                         inner = XmlReader.Create(new MemoryStream(decrypting.PlainText), reader.Settings);
@@ -108,8 +106,7 @@ namespace Solid.IdentityModel.Tokens.Saml2
 
         public override ClaimsPrincipal ValidateToken(string token, TokenValidationParameters validationParameters, out SecurityToken validatedToken)
         {
-            var utf8 = new UTF8Encoding(false);
-            using (var stream = new MemoryStream(utf8.GetBytes(token)))
+            using (var stream = new MemoryStream(Utf8.GetBytes(token)))
             using (var reader = XmlReader.Create(stream))
             {
                 reader.MoveToContent();
@@ -170,30 +167,9 @@ namespace Solid.IdentityModel.Tokens.Saml2
                 return Encoding.UTF8.GetString(stream.ToArray());
             }
         }
-        protected override Saml2Subject CreateSubject(SecurityTokenDescriptor tokenDescriptor)
-        {
-            var subject = base.CreateSubject(tokenDescriptor);
-
-            if (subject.NameId != null && subject.NameId.Format == null)
-                subject.NameId.Format = Saml2Constants.NameIdentifierFormats.Unspecified;
-
-            //if (tokenDescriptor is RequestedSecurityTokenDescriptor extended && extended.ProofKey != null)
-            //{
-               
-            //    if (HolderOfKeyHack.ShouldAddHolderOfKeysSubjectConfirmation(extended))
-            //        HolderOfKeyHack.AddHolderOfKeysSubjectConfirmation(subject, extended);
-            //}
-
-            return subject;
-        }
 
         private bool IsEncryptedAssertion(XmlReader reader) => reader.IsStartElement(EncryptedAssertion, Saml2Constants.Namespace);
         private bool IsSaml2Assertion(string localName, string ns) => localName == Saml2Constants.Elements.Assertion && ns == Saml2Constants.Namespace;
 
-        private TokenValidationParameters CreateDefaultTokenValidationParameters()
-            => new TokenValidationParameters
-            {
-                TokenDecryptionKey = DecryptionKey
-            };
     }
 }

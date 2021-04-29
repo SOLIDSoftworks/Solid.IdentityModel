@@ -1,4 +1,6 @@
 ﻿using Microsoft.IdentityModel.Tokens.Saml2;
+using Microsoft.IdentityModel.Xml;
+using Solid.IdentityModel.Xml;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,6 +10,33 @@ namespace Solid.IdentityModel.Tokens.Saml2
 {
     public class ExtendedSaml2Serializer : Saml2Serializer
     {
+        public ExtendedSaml2Serializer()
+            : this(new ExtendedDSigSerializer())
+        {
+
+        }
+
+        public ExtendedSaml2Serializer(ExtendedDSigSerializer dsigSerializer)
+        {
+            DSigSerializer = dsigSerializer;
+        }
+
+        protected override Saml2SubjectConfirmation ReadSubjectConfirmation(XmlDictionaryReader reader)
+        {
+            return base.ReadSubjectConfirmation(reader);
+        }
+        protected override Saml2SubjectConfirmationData ReadSubjectConfirmationData(XmlDictionaryReader reader)
+        {
+            var type = XmlUtil.GetXsiTypeAsQualifiedName(reader);
+            var p = XmlUtil.EqualsQName(type, Saml2Constants.Types.KeyInfoConfirmationDataType, XmlSignatureConstants.XmlSchemaNamespace);
+            return base.ReadSubjectConfirmationData(reader);
+        }
+
+        protected override void WriteSubjectConfirmationData(XmlWriter writer, Saml2SubjectConfirmationData subjectConfirmationData)
+        {
+            base.WriteSubjectConfirmationData(new Saml2XmlDictionaryWriter(writer), subjectConfirmationData);
+        }
+
         public override void WriteAttribute(XmlWriter writer, Saml2Attribute attribute)
         {
             if (string.IsNullOrEmpty(attribute.AttributeValueXsiType))

@@ -8,6 +8,21 @@ namespace Solid.IdentityModel.Tokens
 {
     public class RequestedSecurityTokenDescriptor : SecurityTokenDescriptor
     {
-        //public RequestedProofToken RequestedProofToken { get; set; }
+        private bool _useSingleEncryptingCredentials = true;
+        private EncryptingCredentials _proofKeyEncryptingCredentials;
+        public SecurityKey ProofKey { get; set; }
+        public EncryptingCredentials ProofKeyEncryptingCredentials
+        {
+            get
+            {
+                if (_useSingleEncryptingCredentials) return EncryptingCredentials;
+                return _proofKeyEncryptingCredentials;
+            }
+            set
+            {
+                _useSingleEncryptingCredentials = false;
+                _proofKeyEncryptingCredentials = value;
+            }
+        }
     }
 }
