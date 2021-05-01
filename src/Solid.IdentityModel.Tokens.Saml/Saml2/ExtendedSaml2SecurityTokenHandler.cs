@@ -36,60 +36,22 @@ namespace Solid.IdentityModel.Tokens.Saml2
             _optionsChangeToken = monitor.OnChange((options, _) => Options = options);
         }
 
-        public virtual Saml2SecurityToken ReadSaml2Token(XmlReader reader, TokenValidationParameters validationParameters)
-        {
-            var token = base.ReadSaml2Token(reader);
+        // protected virtual SecurityKey GetProofKey(Saml2SubjectConfirmation holderOfKey, TokenValidationParameters validationParameters)
+        // {
+        //     var info = holderOfKey.SubjectConfirmationData.KeyInfos.SingleOrDefault();
 
-            var holderOfKey = token.Assertion.Subject.SubjectConfirmations.FirstOrDefault(c => c.Method == Saml2Constants.ConfirmationMethods.HolderOfKey);
-            if (holderOfKey != null)
-            {
-                var key = GetProofKey(holderOfKey, validationParameters);
-                if(key != null)
-                    token = new Saml2HolderOfKeySecurityToken(token.Assertion, key);
-            }
+        //     if (info == null) return null;
 
-            return token;
-        }
+        //     if (info is BinarySecretKeyInfo binary)
+        //         return new SymmetricSecurityKey(binary.Key);
 
-        protected virtual SecurityKey GetProofKey(Saml2SubjectConfirmation holderOfKey, TokenValidationParameters validationParameters)
-        {
-            var info = holderOfKey.SubjectConfirmationData.KeyInfos.SingleOrDefault();
+        //     if(info is EncryptedKeyInfo encrypted)
+        //     {
+        //         foreach(var key in validationParameters.key)
+        //     }
 
-            if (info == null) return null;
-
-            if (info is BinarySecretKeyInfo binary)
-                return new SymmetricSecurityKey(binary.Key);
-
-            if(info is EncryptedKeyInfo encrypted)
-            {
-                
-            }
-
-            return null;
-        }
-
-        public override Saml2SecurityToken ReadSaml2Token(XmlReader reader)
-        {
-            var parameters = CreateDefaultTokenValidationParameters();
-            if (parameters != null) return ReadSaml2Token(reader, parameters);
-            return base.ReadSaml2Token(reader);
-        }
-
-        public override SecurityToken CreateToken(SecurityTokenDescriptor tokenDescriptor)
-        {
-            var token = base.CreateToken(tokenDescriptor) as Saml2SecurityToken;
-            if (tokenDescriptor is RequestedSecurityTokenDescriptor requestedTokenDescriptor && requestedTokenDescriptor.ProofKey != null)
-                token = new Saml2HolderOfKeySecurityToken(token.Assertion, requestedTokenDescriptor.ProofKey);
-            return token;
-        }
-
-        public override SecurityToken CreateToken(SecurityTokenDescriptor tokenDescriptor, AuthenticationInformation authenticationInformation)
-        {
-            var token = base.CreateToken(tokenDescriptor, authenticationInformation) as Saml2SecurityToken;
-            if (tokenDescriptor is RequestedSecurityTokenDescriptor requestedTokenDescriptor && requestedTokenDescriptor.ProofKey != null)
-                token = new Saml2HolderOfKeySecurityToken(token.Assertion, requestedTokenDescriptor.ProofKey);
-            return token;
-        }
+        //     return null;
+        // }
 
         public void Dispose() => _optionsChangeToken?.Dispose();
 

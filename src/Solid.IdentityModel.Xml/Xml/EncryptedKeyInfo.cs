@@ -12,7 +12,7 @@ namespace Solid.IdentityModel.Xml
         public string DigestMethod { get; set; }
         public KeyInfo KeyInfo { get; set; }
         public byte[] CipherValue { get; set; }
-        internal byte[] Decrypt(SecurityKey decryptionKey)
+        public byte[] Decrypt(SecurityKey decryptionKey)
         {
             var keyWrap = null as KeyWrapProvider;
             try

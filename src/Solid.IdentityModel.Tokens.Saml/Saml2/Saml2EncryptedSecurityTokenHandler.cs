@@ -63,18 +63,18 @@ namespace Solid.IdentityModel.Tokens.Saml2
             return base.ReadSaml2Token(reader);
         }
 
-        public override Saml2SecurityToken ReadSaml2Token(XmlReader reader, TokenValidationParameters validationParameters)
+        public virtual Saml2SecurityToken ReadSaml2Token(XmlReader reader, TokenValidationParameters validationParameters)
         {
             if (IsEncryptedAssertion(reader))
             {
                 using (var decrypting = new DecryptingXmlDictionaryReader(reader, validationParameters))
                 {
                     decrypting.Read();
-                    var token = base.ReadSaml2Token(decrypting, validationParameters);
+                    var token = base.ReadSaml2Token(decrypting);
                     return new Saml2EncryptedSecurityToken(token, decrypting.EncryptedData);
                 }
             }
-            return base.ReadSaml2Token(reader, validationParameters);
+            return base.ReadSaml2Token(reader);
         }
 
         public override ClaimsPrincipal ValidateToken(XmlReader reader, TokenValidationParameters validationParameters, out SecurityToken validatedToken)
@@ -89,7 +89,7 @@ namespace Solid.IdentityModel.Tokens.Saml2
                     sub.MoveToContent();
                     using (var decrypting = new DecryptingXmlDictionaryReader(sub, validationParameters))
                     {
-                        var saml2 = base.ReadSaml2Token(decrypting, validationParameters);
+                        var saml2 = base.ReadSaml2Token(decrypting);
                         token = new Saml2EncryptedSecurityToken(saml2, decrypting.EncryptedData);
 
                         inner = XmlReader.Create(new MemoryStream(decrypting.PlainText), reader.Settings);

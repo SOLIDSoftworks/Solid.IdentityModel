@@ -311,7 +311,7 @@ namespace Solid.IdentityModel.Xml
         private static string GetLogMessage(string id)
         {
             if (_logMessages.TryGetValue(id, out var message)) return message;
-            return "Unexpected error";
+            return "Unexpected XML error";
         }
     }
 }
