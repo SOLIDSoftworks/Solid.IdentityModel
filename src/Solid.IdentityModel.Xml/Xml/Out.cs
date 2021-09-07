@@ -11,5 +11,11 @@ namespace Solid.IdentityModel.Xml
             obj = default;
             return false;
         }
+
+        public static bool True<T>(T result, out T obj)
+        {
+            obj = result;
+            return true;
+        }
     }
 }

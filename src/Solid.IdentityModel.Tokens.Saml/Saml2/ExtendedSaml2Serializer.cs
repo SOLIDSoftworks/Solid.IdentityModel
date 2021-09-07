@@ -30,6 +30,7 @@ namespace Solid.IdentityModel.Tokens.Saml2
         {
             DSigSerializer = dsigSerializer;
         }
+
         protected override Saml2SubjectConfirmationData ReadSubjectConfirmationData(XmlDictionaryReader reader)
         {
             XmlUtil.CheckReaderOnEntry(reader, Saml2Constants.Elements.SubjectConfirmationData, Saml2Constants.Namespace);
