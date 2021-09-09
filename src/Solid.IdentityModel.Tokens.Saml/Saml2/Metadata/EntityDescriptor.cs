@@ -53,7 +53,7 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
 
     public class AdditionalMetadataLocation
     {
-        public string Namespace { get; set; }
+        public Uri Namespace { get; set; }
         public Uri Value { get; set; }
     }
 

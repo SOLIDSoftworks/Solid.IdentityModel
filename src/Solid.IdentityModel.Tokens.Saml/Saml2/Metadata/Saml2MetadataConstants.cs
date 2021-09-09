@@ -8,6 +8,7 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
     public static class Saml2MetadataConstants
     {
         public static readonly string Namespace = "urn:oasis:names:tc:SAML:2.0:metadata";
+        public static readonly string Prefix = "md";
 
         public static class Attributes
         {
@@ -28,6 +29,8 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
             public static readonly string WantAssertionsSigned = nameof(WantAssertionsSigned);
             public static readonly string Namespace = "namespace";
             public static readonly string AffiliationOwnerId = "affiliationOwnerID";
+            public static readonly string Lang = "lang";
+            public static readonly string IsRequired = "isRequired";
         }
 
         public static class Elements
@@ -48,8 +51,6 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
             public static readonly string OrganizationName = nameof(OrganizationName);
             public static readonly string OrganizationDisplayName = nameof(OrganizationDisplayName);
             public static readonly string OrganizationUrl = "OrganizationURL";
-            public static readonly string Endpoint = nameof(Endpoint);
-            public static readonly string IndexedEndpoint = nameof(IndexedEndpoint);
             public static readonly string ArtifactResolutionService = nameof(ArtifactResolutionService);
             public static readonly string SingleLogoutService = nameof(SingleLogoutService);
             public static readonly string ManageNameIdService = "ManageNameIDService";

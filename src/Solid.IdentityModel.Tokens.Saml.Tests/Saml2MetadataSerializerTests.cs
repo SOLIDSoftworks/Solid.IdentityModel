@@ -24,7 +24,7 @@ namespace Solid.IdentityModel.FederationMetadata.Tests
         public void ShouldReadExample(string xml, bool signed, int roleCount)
         {
             var reader = CreateReader(xml);
-            var metadata = _serializer.ReadSaml2Metadata(reader);
+            var metadata = _serializer.ReadMetadata(reader);
             Assert.IsType<EntityDescriptor>(metadata);
             Assert.True(reader.EOF);
             if (signed) Assert.NotNull(metadata.Signature);
@@ -38,7 +38,7 @@ namespace Solid.IdentityModel.FederationMetadata.Tests
             var xml = @"<EntityDescriptor xmlns=""urn:oasis:names:tc:SAML:2.0:metadata""></EntityDescriptor>";
             
             var reader = CreateReader(xml);
-            var metadata = _serializer.ReadSaml2Metadata(reader);
+            var metadata = _serializer.ReadMetadata(reader);
             Assert.IsType<EntityDescriptor>(metadata);
         }
 
@@ -48,7 +48,7 @@ namespace Solid.IdentityModel.FederationMetadata.Tests
             var xml = @"<EntitiesDescriptor xmlns=""urn:oasis:names:tc:SAML:2.0:metadata""></EntitiesDescriptor>";
 
             var reader = CreateReader(xml);
-            var metadata = _serializer.ReadSaml2Metadata(reader);
+            var metadata = _serializer.ReadMetadata(reader);
             Assert.IsType<EntitiesDescriptor>(metadata);
         }
 
@@ -60,7 +60,7 @@ namespace Solid.IdentityModel.FederationMetadata.Tests
             var xml = @$"<EntityDescriptor ID=""{expected}"" xmlns=""urn:oasis:names:tc:SAML:2.0:metadata""></EntityDescriptor>";
 
             var reader = CreateReader(xml);
-            var metadata = _serializer.ReadSaml2Metadata(reader);
+            var metadata = _serializer.ReadMetadata(reader);
             Assert.Equal(expected, metadata.Id);
         }
 
@@ -73,7 +73,7 @@ namespace Solid.IdentityModel.FederationMetadata.Tests
 
 
             var reader = CreateReader(xml);
-            var metadata = _serializer.ReadSaml2Metadata(reader);
+            var metadata = _serializer.ReadMetadata(reader);
             var entity = metadata as EntityDescriptor;
             Assert.Equal(expected, entity.EntityId);
         }
@@ -86,7 +86,7 @@ namespace Solid.IdentityModel.FederationMetadata.Tests
             var xml = @$"<EntityDescriptor cacheDuration=""{serialized}"" xmlns=""urn:oasis:names:tc:SAML:2.0:metadata""></EntityDescriptor>";
 
             var reader = CreateReader(xml);
-            var metadata = _serializer.ReadSaml2Metadata(reader);
+            var metadata = _serializer.ReadMetadata(reader);
             Assert.NotNull(metadata.CacheDuration);
             Assert.Equal(expected, metadata.CacheDuration.Value);
         }
@@ -97,7 +97,7 @@ namespace Solid.IdentityModel.FederationMetadata.Tests
             var xml = @$"<EntityDescriptor cacheDuration=""invalid"" xmlns=""urn:oasis:names:tc:SAML:2.0:metadata""></EntityDescriptor>";
 
             var reader = CreateReader(xml);
-            _ = _serializer.ReadSaml2Metadata(reader);
+            _ = _serializer.ReadMetadata(reader);
         }
 
         [Fact]
@@ -108,7 +108,7 @@ namespace Solid.IdentityModel.FederationMetadata.Tests
             var xml = @$"<EntityDescriptor validUntil=""{serialized}"" xmlns=""urn:oasis:names:tc:SAML:2.0:metadata""></EntityDescriptor>";
 
             var reader = CreateReader(xml);
-            var metadata = _serializer.ReadSaml2Metadata(reader);
+            var metadata = _serializer.ReadMetadata(reader);
             Assert.NotNull(metadata.ValidUntil);
             Assert.Equal(expected, metadata.ValidUntil.Value);
         }

@@ -57,8 +57,7 @@ namespace Solid.IdentityModel.FederationMetadata.Tests
     <SPSSODescriptor
         AuthnRequestsSigned=""false""
         WantAssertionsSigned=""false""
-        protocolSupportEnumeration=
-            ""urn:oasis:names:tc:SAML:2.0:protocol"">
+        protocolSupportEnumeration=""urn:oasis:names:tc:SAML:2.0:protocol"">
         <KeyDescriptor use=""signing"">
             <KeyInfo xmlns=""http://www.w3.org/2000/09/xmldsig#"">
                 <X509Data>

@@ -47,28 +47,18 @@ namespace System.Xml
             return value != null;
         }
 
-        //public static bool TryReadAttribute(this XmlReader reader, string localName, string ns, out string value)
-        //{
-        //    var str = reader.GetAttribute(localName, ns);
-        //    value = str;
-        //    return value != null;
-        //}
-
         public static bool TryReadAttributeAsDateTime(this XmlReader reader, string name, out DateTime? value)
             => reader.TryReadAttributeAs(name, str =>
             {
-                if (DateTime.TryParse(str, out var v))
-                    return v;
-                return null;
+                try
+                {
+                    return XmlConvert.ToDateTime(str, XmlDateTimeSerializationMode.Utc);
+                }
+                catch
+                {
+                    return null;
+                }
             }, out value);
-
-        //public static bool TryReadAttributeAsDateTime(this XmlReader reader, string localName, string ns, out DateTime? value)
-        //    => reader.TryReadAttributeAs(localName, ns, str =>
-        //    {
-        //        if (DateTime.TryParse(str, out var v))
-        //            return v;
-        //        return null;
-        //    }, out value);
 
         public static bool TryReadAttributeAsUri(this XmlReader reader, string name, out Uri value)
             => reader.TryReadAttributeAs(name, str =>
@@ -76,13 +66,6 @@ namespace System.Xml
                 if (!Uri.IsWellFormedUriString(str, UriKind.Absolute)) return null;
                 return new Uri(str);
             }, out value);
-
-        //public static bool TryReadAttributeAsUri(this XmlReader reader, string localName, string ns, out Uri value)
-        //    => reader.TryReadAttributeAs(localName, ns, str =>
-        //    {
-        //        if (!Uri.IsWellFormedUriString(str, UriKind.RelativeOrAbsolute)) return null;
-        //        return new Uri(str);
-        //    }, out value);
 
         public static bool TryReadAttributeAsTimeSpan(this XmlReader reader, string name, out TimeSpan? value)
             => reader.TryReadAttributeAs(name, str =>
@@ -104,19 +87,6 @@ namespace System.Xml
                 return null;
             }, out value);
 
-        //public static bool TryReadAttributeAsTimeSpan(this XmlReader reader, string localName, string ns, out TimeSpan? value)
-        //    => reader.TryReadAttributeAs(localName, ns, str =>
-        //    {
-        //        try
-        //        {
-        //            return XmlConvert.ToTimeSpan(str);
-        //        }
-        //        catch
-        //        {
-        //            return null;
-        //        }
-        //    }, out value);
-
         public static Uri ReadElementContentAsUri(this XmlReader reader, UriKind kind = UriKind.Absolute)
         {
             var content = reader.ReadElementContentAsString();
@@ -132,28 +102,5 @@ namespace System.Xml
             value = convert(str);
             return value != null;
         }
-
-        //private static bool TryReadAttributeAs<T>(this XmlReader reader, string localName, string ns, Func<string, T> convert, out T value)
-        //{
-        //    if (!reader.TryReadAttribute(localName, ns, out var str)) return Out.False(out value);
-
-        //    value = convert(str);
-        //    return value != null;
-        //}
-
-        //public static XmlReader ReadElement(this XmlReader reader)
-        //{
-        //    if (!reader.IsStartElement())
-        //        throw new InvalidOperationException("Cannot get reader for element if original reader isn't placed on element.");
-
-        //    var stream = new MemoryStream();
-        //    using (var writer = XmlWriter.Create(stream, new XmlWriterSettings { CloseOutput = false, OmitXmlDeclaration = true }))
-        //        writer.WriteNode(reader, true);
-
-        //    stream.Position = 0;
-        //    var child = XmlReader.Create(stream, reader.Settings);
-        //    child.MoveToContent();
-        //    return child;
-        //}
     }
 }
