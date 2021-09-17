@@ -46,6 +46,12 @@ namespace System.Xml
             value = str;
             return value != null;
         }
+        public static bool TryReadAttribute(this XmlReader reader, string localName, string ns, out string value)
+        {
+            var str = reader.GetAttribute(localName, ns);
+            value = str;
+            return value != null;
+        }
 
         public static bool TryReadAttributeAsDateTime(this XmlReader reader, string name, out DateTime? value)
             => reader.TryReadAttributeAs(name, str =>
@@ -86,6 +92,14 @@ namespace System.Xml
                 if (bool.TryParse(str, out var b)) return b;
                 return null;
             }, out value);
+
+        public static bool TryReadElementContent(this XmlReader reader, string name, string ns, out string content)
+        {
+            if (!reader.IsStartElement(name, ns)) return Out.False(out content);
+            var value = reader.ReadElementContentAsString();
+            content = value;
+            return true;
+        }
 
         public static Uri ReadElementContentAsUri(this XmlReader reader, UriKind kind = UriKind.Absolute)
         {

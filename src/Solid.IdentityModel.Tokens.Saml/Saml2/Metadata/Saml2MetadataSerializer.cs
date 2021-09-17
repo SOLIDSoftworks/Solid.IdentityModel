@@ -692,6 +692,10 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
                 WriteEndpoint(writer, Elements.AssertionIdRequestService, Saml2MetadataConstants.Namespace, assertionIdRequestService);
             foreach (var nameIdFormat in attributeAuthority.NameIdFormat)
                 _ = writer.TryWriteElementValue(Elements.NameIdFormat, Saml2MetadataConstants.Namespace, nameIdFormat);
+            foreach (var attributeProfile in attributeAuthority.AttributeProfile)
+                _ = writer.TryWriteElementValue(Elements.AttributeProfile, Saml2MetadataConstants.Namespace, attributeProfile);
+            foreach (var attribute in attributeAuthority.Attributes)
+                WriteSaml2Attribute(writer, attribute);
         }
 
         protected virtual void WriteSpSsoDescriptorChildren(XmlDictionaryWriter writer, SpSsoDescriptor sp)
