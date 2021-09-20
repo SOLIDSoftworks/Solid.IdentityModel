@@ -69,6 +69,57 @@ namespace Solid.IdentityModel.FederationMetadata.Tests
             AssertEqual(descriptor, deserialized);
         }
 
+        [Fact]
+        public void ShouldRoundTripApplicationService()
+        {
+            var descriptor = new ApplicationServiceDescriptor();
+            var applicationServiceEndpoint = new EndpointReferenceCollection();
+            applicationServiceEndpoint.Add(new EndpointReference { Address = new Uri("https://notused") });
+            descriptor.ApplicationServiceEndpoint.Add(applicationServiceEndpoint);
+            descriptor.ProtocolsSupported.Add(new Uri("http://docs.oasis-open.org/wsfed/federation/200706"));
+
+            var xml = _serializer.WriteRoleDescriptor(descriptor);
+
+            var deserialized = _serializer.ReadRoleDescriptor(xml);
+
+            Assert.IsType<ApplicationServiceDescriptor>(deserialized);
+            AssertEqual(descriptor, deserialized);
+        }
+
+        [Fact]
+        public void ShouldRoundTripAttributeService()
+        {
+            var descriptor = new AttributeServiceDescriptor();
+            var attributeServiceEndpoint = new EndpointReferenceCollection();
+            attributeServiceEndpoint.Add(new EndpointReference { Address = new Uri("https://notused") });
+            descriptor.AttributeServiceEndpoint.Add(attributeServiceEndpoint);
+            descriptor.ProtocolsSupported.Add(new Uri("http://docs.oasis-open.org/wsfed/federation/200706"));
+
+            var xml = _serializer.WriteRoleDescriptor(descriptor);
+
+            var deserialized = _serializer.ReadRoleDescriptor(xml);
+
+            Assert.IsType<AttributeServiceDescriptor>(deserialized);
+            AssertEqual(descriptor, deserialized);
+        }
+
+        [Fact]
+        public void ShouldRoundTripPseudonymService()
+        {
+            var descriptor = new PseudonymServiceDescriptor();
+            var pseudonymServiceEndpoint = new EndpointReferenceCollection();
+            pseudonymServiceEndpoint.Add(new EndpointReference { Address = new Uri("https://notused") });
+            descriptor.PseudonymServiceEndpoint.Add(pseudonymServiceEndpoint);
+            descriptor.ProtocolsSupported.Add(new Uri("http://docs.oasis-open.org/wsfed/federation/200706"));
+
+            var xml = _serializer.WriteRoleDescriptor(descriptor);
+
+            var deserialized = _serializer.ReadRoleDescriptor(xml);
+
+            Assert.IsType<PseudonymServiceDescriptor>(deserialized);
+            AssertEqual(descriptor, deserialized);
+        }
+
         private void AssertEqual(object expected, object actual)
         {
             if (expected == null) return;
