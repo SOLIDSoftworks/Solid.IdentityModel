@@ -652,7 +652,7 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
         protected virtual void WriteAuthnAuthorityDescriptorChildren(XmlDictionaryWriter writer, AuthnAuthorityDescriptor authnAuthority)
         {
             if (!authnAuthority.AuthnQueryService.Any())
-                throw CreateRequiredChildElementMissingException(Elements.AuthnAuthorityDescriptor, Elements.AuthnQueryService);
+                throw XmlWriterExceptionHelper.CreateRequiredChildElementMissingException(Elements.AuthnAuthorityDescriptor, Elements.AuthnQueryService);
 
             WriteRoleDescriptorChildren(writer, authnAuthority);
 
@@ -667,7 +667,7 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
         protected virtual void WritePdpDescriptorChildren(XmlDictionaryWriter writer, PdpDescriptor pdp)
         {
             if (!pdp.AuthzService.Any())
-                throw CreateRequiredChildElementMissingException(Elements.PdpDescriptor, Elements.AuthzService);
+                throw XmlWriterExceptionHelper.CreateRequiredChildElementMissingException(Elements.PdpDescriptor, Elements.AuthzService);
 
             WriteRoleDescriptorChildren(writer, pdp);
 
@@ -682,7 +682,7 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
         protected virtual void WriteAttributeAuthorityDescriptorChildren(XmlDictionaryWriter writer, AttributeAuthorityDescriptor attributeAuthority)
         {
             if (!attributeAuthority.AttributeService.Any())
-                throw CreateRequiredChildElementMissingException(Elements.AttributeAuthorityDescriptor, Elements.AttributeService);
+                throw XmlWriterExceptionHelper.CreateRequiredChildElementMissingException(Elements.AttributeAuthorityDescriptor, Elements.AttributeService);
 
             WriteRoleDescriptorChildren(writer, attributeAuthority);
 
@@ -701,7 +701,7 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
         protected virtual void WriteSpSsoDescriptorChildren(XmlDictionaryWriter writer, SpSsoDescriptor sp)
         {
             if (!sp.AssertionConsumerService.Any())
-                throw CreateRequiredChildElementMissingException(Elements.SpSsoDescriptor, Elements.AssertionConsumerService);
+                throw XmlWriterExceptionHelper.CreateRequiredChildElementMissingException(Elements.SpSsoDescriptor, Elements.AssertionConsumerService);
 
             WriteSsoDescriptorChildren(writer, sp);
             foreach (var assertionConsumerService in sp.AssertionConsumerService)
@@ -739,11 +739,11 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
         protected virtual void WriteOrganizationChildren(XmlDictionaryWriter writer, Organization organization)
         {
             if (!organization.Name.Any())
-                throw CreateRequiredChildElementMissingException(Elements.Organization, Elements.OrganizationName);
+                throw XmlWriterExceptionHelper.CreateRequiredChildElementMissingException(Elements.Organization, Elements.OrganizationName);
             if (!organization.DisplayName.Any())
-                throw CreateRequiredChildElementMissingException(Elements.Organization, Elements.OrganizationDisplayName);
+                throw XmlWriterExceptionHelper.CreateRequiredChildElementMissingException(Elements.Organization, Elements.OrganizationDisplayName);
             if (!organization.Url.Any())
-                throw CreateRequiredChildElementMissingException(Elements.Organization, Elements.OrganizationUrl);
+                throw XmlWriterExceptionHelper.CreateRequiredChildElementMissingException(Elements.Organization, Elements.OrganizationUrl);
 
             foreach (var name in organization.Name)
                 WriteLocalizedName(writer, Elements.OrganizationName, Saml2MetadataConstants.Namespace, name);
@@ -769,9 +769,9 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
         protected virtual void WriteAttributeConsumingServiceChildren(XmlDictionaryWriter writer, AttributeConsumingService attributeConsumingService)
         {
             if (!attributeConsumingService.Name.Any())
-                throw CreateRequiredChildElementMissingException(Elements.AttributeConsumingService, Elements.ServiceName);
+                throw XmlWriterExceptionHelper.CreateRequiredChildElementMissingException(Elements.AttributeConsumingService, Elements.ServiceName);
             if(!attributeConsumingService.RequestedAttribute.Any())
-                throw CreateRequiredChildElementMissingException(Elements.AttributeConsumingService, Elements.RequestedAttribute);
+                throw XmlWriterExceptionHelper.CreateRequiredChildElementMissingException(Elements.AttributeConsumingService, Elements.RequestedAttribute);
 
             foreach (var name in attributeConsumingService.Name)
                 WriteLocalizedName(writer, Elements.ServiceName, Saml2MetadataConstants.Namespace, name);
@@ -784,19 +784,19 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
         protected virtual void WriteAdditionalMetadataLocationChildren(XmlDictionaryWriter writer, AdditionalMetadataLocation location)
         {
             if (!writer.TryWriteValue(location.Value))
-                CreateRequiredElementValueMissingException(nameof(WriteAdditionalMetadataLocationChildren));
+                XmlWriterExceptionHelper.CreateRequiredElementValueMissingException(nameof(WriteAdditionalMetadataLocationChildren));
         }
 
         protected virtual void WriteLocalizedNameChildren(XmlDictionaryWriter writer, string elementLocalName, LocalizedName localizedName)
         {
             if (!writer.TryWriteValue(localizedName.Value))
-                throw CreateRequiredElementValueMissingException(elementLocalName);
+                throw XmlWriterExceptionHelper.CreateRequiredElementValueMissingException(elementLocalName);
         }
 
         protected virtual void WriteLocalizedUriChildren(XmlDictionaryWriter writer, string elementLocalName, LocalizedUri localizedUri)
         {
             if (!writer.TryWriteValue(localizedUri.Value))
-                throw CreateRequiredElementValueMissingException(elementLocalName);
+                throw XmlWriterExceptionHelper.CreateRequiredElementValueMissingException(elementLocalName);
         }
 
         protected virtual void WriteRequestedAttributeChildren(XmlDictionaryWriter writer, RequestedSaml2Attribute requestedAttribute)
@@ -1073,10 +1073,10 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
         protected virtual void WriteEndpointAttributes(XmlDictionaryWriter writer, string elementLocalName, Endpoint endpoint)
         {
             if (!writer.TryWriteAttributeValue(Attributes.Binding, endpoint.Binding))
-                throw CreateRequiredAttributeMissingException(elementLocalName, Attributes.Binding);
+                throw XmlWriterExceptionHelper.CreateRequiredAttributeMissingException(elementLocalName, Attributes.Binding);
 
             if (!writer.TryWriteAttributeValue(Attributes.Location, endpoint.Location))
-                throw CreateRequiredAttributeMissingException(elementLocalName, Attributes.Location);
+                throw XmlWriterExceptionHelper.CreateRequiredAttributeMissingException(elementLocalName, Attributes.Location);
 
             _ = writer.TryWriteAttributeValue(Attributes.ResponseLocation, endpoint.ResponseLocation);
         }
@@ -1097,25 +1097,25 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
         protected virtual void WriteAdditionalMetadataLocationAttributes(XmlDictionaryWriter writer, AdditionalMetadataLocation location)
         {
             if(!writer.TryWriteAttributeValue(Attributes.Namespace, location.Namespace))
-                throw CreateRequiredAttributeMissingException(Elements.AdditionalMetadataLocation, Attributes.Namespace);
+                throw XmlWriterExceptionHelper.CreateRequiredAttributeMissingException(Elements.AdditionalMetadataLocation, Attributes.Namespace);
         }
 
         protected virtual void WriteLocalizedNameAttributes(XmlDictionaryWriter writer, string elementLocalName, LocalizedName localizedName)
         {
             if (!writer.TryWriteAttributeValue(Attributes.Lang, localizedName.Lang))
-                throw CreateRequiredAttributeMissingException(elementLocalName, Attributes.Lang);
+                throw XmlWriterExceptionHelper.CreateRequiredAttributeMissingException(elementLocalName, Attributes.Lang);
         }
 
         protected virtual void WriteLocalizedUriAttributes(XmlDictionaryWriter writer, string elementLocalName, LocalizedUri localizedUri)
         {
             if (!writer.TryWriteAttributeValue(Attributes.Lang, localizedUri.Lang))
-                throw CreateRequiredAttributeMissingException(elementLocalName, Attributes.Lang);
+                throw XmlWriterExceptionHelper.CreateRequiredAttributeMissingException(elementLocalName, Attributes.Lang);
         }
 
         protected virtual void WriteRequestedAttributeAttributes(XmlDictionaryWriter writer, RequestedSaml2Attribute requestedAttribute)
         {
             if (!writer.TryWriteAttributeValue(Saml2Constants.Attributes.Name, requestedAttribute.Name))
-                throw CreateRequiredAttributeMissingException(Elements.RequestedAttribute, Saml2Constants.Attributes.Name);
+                throw XmlWriterExceptionHelper.CreateRequiredAttributeMissingException(Elements.RequestedAttribute, Saml2Constants.Attributes.Name);
             _ = writer.TryWriteAttributeValue(Attributes.IsRequired, requestedAttribute.IsRequired);
             _ = writer.TryWriteAttributeValue(Saml2Constants.Attributes.NameFormat, requestedAttribute.NameFormat);
             _ = writer.TryWriteAttributeValue(Saml2Constants.Attributes.FriendlyName, requestedAttribute.FriendlyName);
@@ -1295,14 +1295,6 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
             return absolute.Length <= 1024;
         }
 
-        protected Exception CreateRequiredAttributeMissingException(string elementName, string missingAttributeName)
-            => new InvalidOperationException($"Unable to write element '{elementName}'. The attribute '{missingAttributeName}' is required.");
-
-        protected virtual Exception CreateRequiredChildElementMissingException(string elementName, string missingElementName)
-            => new InvalidOperationException($"Unable to write element '{elementName}'. A at least one '{missingElementName}' if required.");
-
-        protected virtual Exception CreateRequiredElementValueMissingException(string elementName)
-            => new InvalidOperationException($"Unable to write element '{elementName}'. Element content is required.");
         #endregion
     }
 }

@@ -6,6 +6,7 @@ using Solid.IdentityModel.Tokens.Saml2.Metadata;
 using Solid.IdentityModel.Xml;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Xml;
 using static Solid.IdentityModel.FederationMetadata.WsFederationConstants;
@@ -27,6 +28,12 @@ namespace Solid.IdentityModel.FederationMetadata
         {
             WsAuthorizationSerializer = wsAuthorizationSerializer;
             WsAddressingSerializer = wsAddressingSerializer;
+        }
+
+        protected override void WriteSaml2MetadataAttributes(XmlDictionaryWriter writer, Saml2Metadata metadata)
+        {
+            base.WriteSaml2MetadataAttributes(writer, metadata);
+            writer.WriteXmlnsAttribute(Prefix, Namespace);
         }
 
         protected override bool TryReadRoleDescriptor(XmlDictionaryReader reader, out RoleDescriptor role)
@@ -286,18 +293,22 @@ namespace Solid.IdentityModel.FederationMetadata
 
         protected virtual void ReadAttributeServiceDescriptorAttributes(XmlDictionaryReader reader, AttributeServiceDescriptor attributeServiceDescriptor)
         {
+            // No default attributes
         }
 
         protected virtual void ReadPseudonymServiceDescriptorAttributes(XmlDictionaryReader reader, PseudonymServiceDescriptor pseudonymServiceDescriptor)
         {
+            // No default attributes
         }
 
         protected virtual void ReadApplicationServiceDescriptorAttributes(XmlDictionaryReader reader, ApplicationServiceDescriptor applicationServiceDescriptor)
         {
+            // No default attributes
         }
 
         protected virtual void ReadSecurityTokenServiceDescriptorAttributes(XmlDictionaryReader reader, SecurityTokenServiceDescriptor securityTokenServiceDescriptor)
         {
+            // No default attributes
         }
 
         protected override void WriteRoleDescriptorAttributes(XmlDictionaryWriter writer, RoleDescriptor role)
@@ -305,6 +316,12 @@ namespace Solid.IdentityModel.FederationMetadata
             base.WriteRoleDescriptorAttributes(writer, role);
             if (role is ApplicationServiceDescriptor applicationServiceDescriptor)
                 WriteApplicationServiceDescriptorAttributes(writer, applicationServiceDescriptor);
+
+            if (role is AttributeServiceDescriptor attributeServiceDescriptor)
+                WriteAttributeServiceDescriptorAttributes(writer, attributeServiceDescriptor);
+
+            if (role is PseudonymServiceDescriptor pseudonymServiceDescriptor)
+                WritePseudonymServiceDescriptorAttributes(writer, pseudonymServiceDescriptor);
 
             if (role is SecurityTokenServiceDescriptor securityTokenServiceDescriptor)
                 WriteSecurityTokenServiceDescriptorAttributes(writer, securityTokenServiceDescriptor);
@@ -314,26 +331,191 @@ namespace Solid.IdentityModel.FederationMetadata
         {
             base.WriteRoleDescriptorChildren(writer, role);
             if (role is ApplicationServiceDescriptor applicationServiceDescriptor)
-                WriteApplicationServiceDescriptorAttributes(writer, applicationServiceDescriptor);
+                WriteApplicationServiceDescriptorChildren(writer, applicationServiceDescriptor);
+
+            if (role is AttributeServiceDescriptor attributeServiceDescriptor)
+                WriteAttributeServiceDescriptorChildren(writer, attributeServiceDescriptor);
+
+            if (role is PseudonymServiceDescriptor pseudonymServiceDescriptor)
+                WritePseudonymServiceDescriptorChildren(writer, pseudonymServiceDescriptor);
 
             if (role is SecurityTokenServiceDescriptor securityTokenServiceDescriptor)
-                WriteSecurityTokenServiceDescriptorAttributes(writer, securityTokenServiceDescriptor);
+                WriteSecurityTokenServiceDescriptorChildren(writer, securityTokenServiceDescriptor);
         }
 
         protected virtual void WriteSecurityTokenServiceDescriptorAttributes(XmlDictionaryWriter writer, SecurityTokenServiceDescriptor securityTokenServiceDescriptor)
         {
+            WriteWebServiceDescriptorAttributes(writer, securityTokenServiceDescriptor);
         }
 
-        protected virtual void WriteSecurityTokenServiceChildren(XmlDictionaryWriter writer, SecurityTokenServiceDescriptor securityTokenServiceDescriptor)
+        protected virtual void WriteSecurityTokenServiceDescriptorChildren(XmlDictionaryWriter writer, SecurityTokenServiceDescriptor securityTokenServiceDescriptor)
         {
+            if (securityTokenServiceDescriptor == null) return;
+            if (!securityTokenServiceDescriptor.SecurityTokenServiceEndpoint.Any())
+                throw XmlWriterExceptionHelper.CreateRequiredChildElementMissingException(Saml2MetadataConstants.Elements.RoleDescriptor, securityTokenServiceDescriptor.GetXmlTypeName());
+
+            WriteWebServiceDescriptorChildren(writer, securityTokenServiceDescriptor);
+
+            foreach (var securityTokenServiceEndpoint in securityTokenServiceDescriptor.SecurityTokenServiceEndpoint)
+                WsAddressingSerializer.WriteEndpointReferenceCollection(writer, Prefix, Elements.SecurityTokenServiceEndpoint, Namespace, securityTokenServiceEndpoint);
+
+            foreach (var singleSignOutSubscriptionEndpoint in securityTokenServiceDescriptor.SingleSignOutSubscriptionEndpoint)
+                WsAddressingSerializer.WriteEndpointReferenceCollection(writer, Prefix, Elements.SingleSignOutSubscriptionEndpoint, Namespace, singleSignOutSubscriptionEndpoint);
+
+            foreach (var singleSignOutNotificationEndpoint in securityTokenServiceDescriptor.SingleSignOutNotificationEndpoint)
+                WsAddressingSerializer.WriteEndpointReferenceCollection(writer, Prefix, Elements.SingleSignOutNotificationEndpoint, Namespace, singleSignOutNotificationEndpoint);
+
+            foreach (var passiveRequestorEndpoint in securityTokenServiceDescriptor.PassiveRequestorEndpoint)
+                WsAddressingSerializer.WriteEndpointReferenceCollection(writer, Prefix, Elements.PassiveRequestorEndpoint, Namespace, passiveRequestorEndpoint);
         }
 
         protected virtual void WriteApplicationServiceDescriptorAttributes(XmlDictionaryWriter writer, ApplicationServiceDescriptor applicationServiceDescriptor)
         {
+            WriteWebServiceDescriptorAttributes(writer, applicationServiceDescriptor);
         }
 
         protected virtual void WriteApplicationServiceDescriptorChildren(XmlDictionaryWriter writer, ApplicationServiceDescriptor applicationServiceDescriptor)
         {
+            if (applicationServiceDescriptor == null) return;
+            if (!applicationServiceDescriptor.ApplicationServiceEndpoint.Any())
+                throw XmlWriterExceptionHelper.CreateRequiredChildElementMissingException(Saml2MetadataConstants.Elements.RoleDescriptor, applicationServiceDescriptor.GetXmlTypeName());
+
+            WriteWebServiceDescriptorChildren(writer, applicationServiceDescriptor);
+
+            foreach (var applicationServiceEndpoint in applicationServiceDescriptor.ApplicationServiceEndpoint)
+                WsAddressingSerializer.WriteEndpointReferenceCollection(writer, Prefix, Elements.ApplicationServiceEndpoint, Namespace, applicationServiceEndpoint);
+
+            foreach (var singleSignOutNotificationEndpoint in applicationServiceDescriptor.SingleSignOutNotificationEndpoint)
+                WsAddressingSerializer.WriteEndpointReferenceCollection(writer, Prefix, Elements.SingleSignOutNotificationEndpoint, Namespace, singleSignOutNotificationEndpoint);
+
+            foreach (var passiveRequestorEndpoint in applicationServiceDescriptor.PassiveRequestorEndpoint)
+                WsAddressingSerializer.WriteEndpointReferenceCollection(writer, Prefix, Elements.PassiveRequestorEndpoint, Namespace, passiveRequestorEndpoint);
+        }
+
+        protected virtual void WriteAttributeServiceDescriptorAttributes(XmlDictionaryWriter writer, AttributeServiceDescriptor attributeServiceDescriptor)
+        {
+            WriteWebServiceDescriptorAttributes(writer, attributeServiceDescriptor);
+        }
+
+        protected virtual void WriteAttributeServiceDescriptorChildren(XmlDictionaryWriter writer, AttributeServiceDescriptor attributeServiceDescriptor)
+        {
+            if (attributeServiceDescriptor == null) return;
+            if (!attributeServiceDescriptor.AttributeServiceEndpoint.Any())
+                throw XmlWriterExceptionHelper.CreateRequiredChildElementMissingException(Saml2MetadataConstants.Elements.RoleDescriptor, attributeServiceDescriptor.GetXmlTypeName());
+
+            WriteWebServiceDescriptorChildren(writer, attributeServiceDescriptor);
+
+            foreach (var attributeServiceEndpoint in attributeServiceDescriptor.AttributeServiceEndpoint)
+                WsAddressingSerializer.WriteEndpointReferenceCollection(writer, Prefix, Elements.AttributeServiceEndpoint, Namespace, attributeServiceEndpoint);
+
+            foreach (var singleSignOutNotificationEndpoint in attributeServiceDescriptor.SingleSignOutNotificationEndpoint)
+                WsAddressingSerializer.WriteEndpointReferenceCollection(writer, Prefix, Elements.SingleSignOutNotificationEndpoint, Namespace, singleSignOutNotificationEndpoint);
+        }
+
+        protected virtual void WritePseudonymServiceDescriptorAttributes(XmlDictionaryWriter writer, PseudonymServiceDescriptor pseudonymServiceDescriptor)
+        {
+            WriteWebServiceDescriptorAttributes(writer, pseudonymServiceDescriptor);
+        }
+
+        protected virtual void WritePseudonymServiceDescriptorChildren(XmlDictionaryWriter writer, PseudonymServiceDescriptor pseudonymServiceDescriptor)
+        {
+            if (pseudonymServiceDescriptor == null) return;
+            if (!pseudonymServiceDescriptor.PseudonymServiceEndpoint.Any())
+                throw XmlWriterExceptionHelper.CreateRequiredChildElementMissingException(Saml2MetadataConstants.Elements.RoleDescriptor, pseudonymServiceDescriptor.GetXmlTypeName());
+
+            WriteWebServiceDescriptorChildren(writer, pseudonymServiceDescriptor);
+
+            foreach (var pseudonymServiceEndpoint in pseudonymServiceDescriptor.PseudonymServiceEndpoint)
+                WsAddressingSerializer.WriteEndpointReferenceCollection(writer, Prefix, Elements.PseudonymServiceEndpoint, Namespace, pseudonymServiceEndpoint);
+
+            foreach (var singleSignOutNotificationEndpoint in pseudonymServiceDescriptor.SingleSignOutNotificationEndpoint)
+                WsAddressingSerializer.WriteEndpointReferenceCollection(writer, Prefix, Elements.SingleSignOutNotificationEndpoint, Namespace, singleSignOutNotificationEndpoint);
+        }
+
+        protected virtual void WriteWebServiceDescriptorChildren(XmlDictionaryWriter writer, WebServiceDescriptor webServiceDescriptor)
+        {
+            WriteLogicalServiceNamesOffered(writer, webServiceDescriptor.IssuerNames);
+            WriteTokenTypesOffered(writer, webServiceDescriptor.TokenTypesOffered);
+            WriteClaimDialectsOffered(writer, webServiceDescriptor.ClaimDialectsOffered);
+            WriteClaimTypes(writer, Prefix, Elements.ClaimTypesOffered, Namespace, webServiceDescriptor.ClaimTypesOffered);
+            WriteClaimTypes(writer, Prefix, Elements.ClaimTypesRequested, Namespace, webServiceDescriptor.ClaimTypesRequested);
+            _ = writer.TryWriteElementValue(Elements.AutomaticPseudonyms, Namespace, webServiceDescriptor.AutomaticPseudonyms);
+            WsAddressingSerializer.WriteEndpointReferenceCollection(writer, Elements.TargetScopes, Namespace, webServiceDescriptor.TargetScopes);
+        }
+
+        protected virtual void WriteWebServiceDescriptorAttributes(XmlDictionaryWriter writer, WebServiceDescriptor webServiceDescriptor)
+        {
+            if (webServiceDescriptor == null) return;
+
+            WriteWebServiceDescriptorTypeAttribute(writer, webServiceDescriptor);
+
+            _ = writer.TryWriteAttributeValue(Attributes.ServiceDisplayName, webServiceDescriptor.DisplayName);
+            _ = writer.TryWriteAttributeValue(Attributes.ServiceDescription, webServiceDescriptor.Description);
+        }
+
+        protected virtual void WriteWebServiceDescriptorTypeAttribute(XmlDictionaryWriter writer, WebServiceDescriptor webServiceDescriptor)
+        {
+            var prefix = writer.LookupPrefix(Namespace);
+            if (string.IsNullOrEmpty(prefix))
+            {
+                // this is added for testing purposes
+                writer.WriteXmlnsAttribute(Prefix, Namespace);
+                prefix = Prefix;
+            }
+            var type = $"{prefix}:{webServiceDescriptor.GetType().Name.Replace("Descriptor", string.Empty)}Type";
+            writer.WriteAttributeString(XsiConstants.Prefix, XsiConstants.Attributes.Type, XsiConstants.Namespace, type);
+        }
+
+        protected virtual void WriteLogicalServiceNamesOffered(XmlDictionaryWriter writer, ICollection<Uri> issuerNames)
+        {
+            if (!issuerNames.Any()) return;
+            writer.WriteStartElement(Prefix, Elements.LogicalServiceNamesOffered, Namespace);
+
+            foreach (var issuerName in issuerNames)
+                WriteElementWithUriAttribute(writer, Prefix, Elements.IssuerName, Namespace, issuerName);
+
+            writer.WriteEndElement();
+        }
+
+        protected virtual void WriteTokenTypesOffered(XmlDictionaryWriter writer, ICollection<Uri> tokenTypes)
+        {
+            if (!tokenTypes.Any()) return;
+            writer.WriteStartElement(Prefix, Elements.TokenTypesOffered, Namespace);
+
+            foreach (var tokenType in tokenTypes)
+                WriteElementWithUriAttribute(writer, Prefix, Elements.TokenType, Namespace, tokenType);
+
+            writer.WriteEndElement();
+        }
+
+        protected virtual void WriteClaimDialectsOffered(XmlDictionaryWriter writer, ICollection<Uri> claimDialectsOffered)
+        {
+            if (!claimDialectsOffered.Any()) return;
+            writer.WriteStartElement(Prefix, Elements.ClaimDialectsOffered, Namespace);
+
+            foreach (var claimDialect in claimDialectsOffered)
+                WriteElementWithUriAttribute(writer, Prefix, Elements.ClaimDialect, Namespace, claimDialect);
+
+            writer.WriteEndElement();
+        }
+
+        protected virtual void WriteClaimTypes(XmlDictionaryWriter writer, string prefix, string name, string ns, ICollection<ClaimType> claimTypes)
+        {
+            if (!claimTypes.Any()) return;
+            writer.WriteStartElement(prefix, name, ns);
+
+            foreach (var claimType in claimTypes)
+                WsAuthorizationSerializer.WriteClaimType(writer, claimType);
+
+            writer.WriteEndElement();
+        }
+
+        protected virtual void WriteElementWithUriAttribute(XmlDictionaryWriter writer, string prefix, string name, string ns, Uri uri)
+        {
+            if (uri == null) return;
+            writer.WriteStartElement(prefix, name, ns);
+            _ = writer.TryWriteAttributeValue(Attributes.Uri, uri);
+            writer.WriteEndElement();
         }
     }
 }

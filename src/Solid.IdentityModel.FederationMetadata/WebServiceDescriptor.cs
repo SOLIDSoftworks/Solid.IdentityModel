@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Solid.IdentityModel.FederationMetadata
 {
-    public class WebServiceDescriptor : Tokens.Saml2.Metadata.RoleDescriptor
+    public abstract class WebServiceDescriptor : Tokens.Saml2.Metadata.RoleDescriptor
     {
         public string DisplayName { get; set; }
         public string Description { get; set; }
@@ -17,5 +17,10 @@ namespace Solid.IdentityModel.FederationMetadata
         public ICollection<ClaimType> ClaimTypesRequested { get; } = new List<ClaimType>();
         public bool? AutomaticPseudonyms { get; set; }
         public ICollection<EndpointReference> TargetScopes { get; } = new List<EndpointReference>();
+        public  virtual string GetXmlTypeName()
+        {
+            var name = this.GetType().Name;
+            return $"{name.Replace("Descriptor", string.Empty)}Type";
+        }
     }
 }

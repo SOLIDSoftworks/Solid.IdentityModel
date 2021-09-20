@@ -63,20 +63,49 @@ namespace System.Xml
             return true;
         }
 
-        public static bool TryWriteElementValue(this XmlWriter writer, string localName, string ns, string value, bool allowEmpty = false)
+        public static bool TryWriteElementValue(this XmlWriter writer, string prefix, string localName, string ns, string value, bool allowEmpty = false)
         {
             if (value == null) return false;
             if (!allowEmpty && string.IsNullOrEmpty(value)) return false;
-            writer.WriteElementString(localName, ns, value);
+            if (string.IsNullOrEmpty(prefix)) writer.WriteElementString(localName, ns, value);
+            else writer.WriteElementString(prefix, localName, ns, value);
+            return true;
+        }
+
+        public static bool TryWriteElementValue(this XmlWriter writer, string localName, string ns, string value, bool allowEmpty = false)
+        {
+            var prefix = writer.LookupPrefix(ns);
+            return writer.TryWriteElementValue(prefix, localName, ns, value, allowEmpty: allowEmpty);
+        }
+
+        public static bool TryWriteElementValue(this XmlWriter writer, string prefix, string localName, string ns, Uri value, bool allowEmpty = false)
+        {
+            var original = value?.OriginalString;
+            if (!allowEmpty && string.IsNullOrEmpty(original)) return false;
+            if (string.IsNullOrEmpty(prefix)) writer.WriteElementString(localName, ns, original ?? string.Empty);
+            else writer.WriteElementString(prefix, localName, ns, original ?? string.Empty);
             return true;
         }
 
         public static bool TryWriteElementValue(this XmlWriter writer, string localName, string ns, Uri value, bool allowEmpty = false)
         {
-            var original = value?.OriginalString;
-            if (!allowEmpty && string.IsNullOrEmpty(original)) return false;
-            writer.WriteElementString(localName, ns, original ?? string.Empty);
+            var prefix = writer.LookupPrefix(ns);
+            return writer.TryWriteElementValue(prefix, localName, ns, value, allowEmpty: allowEmpty);
+        }
+
+        public static bool TryWriteElementValue(this XmlWriter writer, string prefix, string localName, string ns, bool? value, bool allowEmpty = false)
+        {
+            if (value == null) return false;
+            if (!allowEmpty && value == null) return false;
+            if (string.IsNullOrEmpty(prefix)) writer.WriteElementString(localName, ns, value.Value.ToString());
+            else writer.WriteElementString(prefix, localName, ns, value.Value.ToString());
             return true;
+        }
+
+        public static bool TryWriteElementValue(this XmlWriter writer, string localName, string ns, bool? value, bool allowEmpty = false)
+        {
+            var prefix = writer.LookupPrefix(ns);
+            return writer.TryWriteElementValue(prefix, localName, ns, value, allowEmpty: allowEmpty);
         }
     }
 }

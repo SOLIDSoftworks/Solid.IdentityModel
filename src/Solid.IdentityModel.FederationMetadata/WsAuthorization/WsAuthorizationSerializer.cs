@@ -38,5 +38,23 @@ namespace Solid.IdentityModel.FederationMetadata.WsAuthorization
             claimType = type;
             return true;
         }
+
+        public virtual void WriteClaimType(XmlDictionaryWriter writer, ClaimType claimType)
+        {
+            if (claimType == null) return;
+
+            writer.WriteStartElement(Elements.ClaimType, Namespace);
+            if(!writer.TryWriteAttributeValue(Attributes.Uri, claimType.Uri))
+                throw XmlWriterExceptionHelper.CreateRequiredAttributeMissingException(Elements.ClaimType, Attributes.Uri);
+            _ = writer.TryWriteAttributeValue(Attributes.Optional, claimType.Optional);
+
+            _ = writer.TryWriteElementValue(Elements.DisplayName, Namespace, claimType.DisplayName);
+            _ = writer.TryWriteElementValue(Elements.Description, Namespace, claimType.Description);
+            _ = writer.TryWriteElementValue(Elements.DisplayValue, Namespace, claimType.DisplayValue);
+
+            _ = writer.TryWriteElementValue(Elements.Value, Namespace, claimType.Value);
+
+            writer.WriteEndElement();
+        }
     }
 }

@@ -38,6 +38,38 @@ namespace Solid.IdentityModel.FederationMetadata.WsAddressing
             endpointReference = endpoint;
             return true;
         }
+
+        public virtual void WriteEndpointReferenceCollection(XmlDictionaryWriter writer, string prefix, string name, string ns, ICollection<EndpointReference> endpointReferenceCollection)
+        {
+            if (endpointReferenceCollection == null) return;
+            if (endpointReferenceCollection.Count == 0) return;
+
+            if (!string.IsNullOrEmpty(prefix)) writer.WriteStartElement(prefix, name, ns);
+            else writer.WriteStartElement(name, ns);
+
+            foreach (var endpoint in endpointReferenceCollection)
+                WriteEndpointReference(writer, endpoint);
+
+            writer.WriteEndElement();
+        }
+
+        public virtual void WriteEndpointReferenceCollection(XmlDictionaryWriter writer, string name, string ns, ICollection<EndpointReference> endpointReferenceCollection)
+        {
+            var prefix = writer.LookupPrefix(ns);
+            WriteEndpointReferenceCollection(writer, prefix, name, ns, endpointReferenceCollection);
+        }
+
+        public virtual void WriteEndpointReference(XmlDictionaryWriter writer, EndpointReference endpointReference)
+        {
+            if (endpointReference == null) return;
+
+            writer.WriteStartElement(Elements.EndpointReference, Namespace);
+            if (!writer.TryWriteElementValue(Elements.Address, Namespace, endpointReference.Address))
+                throw XmlWriterExceptionHelper.CreateRequiredChildElementMissingException(Elements.EndpointReference, Elements.Address);
+
+            writer.WriteEndElement();
+        }
+
         protected virtual void ReadEndpointReferenceAttributes(XmlDictionaryReader reader, EndpointReference endpointReference)
         {
         }

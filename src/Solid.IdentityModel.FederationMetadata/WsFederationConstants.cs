@@ -7,6 +7,7 @@ namespace Solid.IdentityModel.FederationMetadata
     public static class WsFederationConstants
     {
         public static readonly string Namespace = "http://docs.oasis-open.org/wsfed/federation/200706";
+        public static readonly string Prefix = "fed";
         public static class Elements
         {
             public static readonly string LogicalServiceNamesOffered = nameof(LogicalServiceNamesOffered);
