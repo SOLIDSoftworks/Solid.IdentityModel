@@ -54,9 +54,9 @@ namespace Solid.IdentityModel.Tokens
             return this;
         }
 
-        public CryptoOptions AddSupportedKeyWrapAlgorithm(string algorithm, Func<IServiceProvider, KeyWrapProvider> factory)
+        public CryptoOptions AddSupportedKeyWrapAlgorithm(string algorithm, Func<IServiceProvider, SecurityKey, bool, KeyWrapProvider> factory)
         {
-            SupportedKeyWrapAlgorithms[algorithm] = new KeyWrapProviderDescriptor(algorithm, (services, args) => factory(services));
+            SupportedKeyWrapAlgorithms[algorithm] = new KeyWrapProviderDescriptor(algorithm, (services, args) => factory(services, args.FirstOrDefault() as SecurityKey, args.ElementAtOrDefault(1) is bool unwrap && unwrap));
             return this;
         }
 

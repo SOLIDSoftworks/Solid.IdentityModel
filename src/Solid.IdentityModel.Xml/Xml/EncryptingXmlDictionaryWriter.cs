@@ -9,6 +9,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Xml;
+using RSAKeyValue = System.Security.Cryptography.Xml.RSAKeyValue;
 using KeyInfo = System.Security.Cryptography.Xml.KeyInfo;
 
 namespace Solid.IdentityModel.Xml
@@ -150,7 +151,7 @@ namespace Solid.IdentityModel.Xml
             };
 
             if (_credentials.Key is RsaSecurityKey rsa)
-                throw new NotSupportedException("RSA security not supported for now.");
+                keyInfo.AddClause(CreateEncryptedKeyClause(symmetric.Key, rsa.Rsa, document));
             else if (_credentials.Key is X509SecurityKey x509)
                 keyInfo.AddClause(CreateEncryptedKeyClause(symmetric.Key, x509.Certificate, document));
             else if (!string.IsNullOrEmpty(_credentials.Key.KeyId))
@@ -168,32 +169,22 @@ namespace Solid.IdentityModel.Xml
             Crypto.ReleaseSymmetricAlgorithm(symmetric);
         }
 
-        //public static XmlElement AddDigestMethodToEncryptionMethod(XmlElement element, string digestMethod)
-        //{
-        //    var encryptionMethods = element
-        //        .SelectNodes("//*")
-        //        .OfType<XmlElement>()
-        //        .Where(e => e.LocalName == "EncryptionMethod")
-        //        .Where(e =>
-        //        {
-        //            var algorithm = e.GetAttribute("Algorithm");
-        //            return algorithm == EncryptedXml.XmlEncRSAOAEPUrl;
-        //        })
-        //    ;
-        //    foreach (var encryptionMethod in encryptionMethods)
-        //    {
-        //        var digest = element.OwnerDocument.CreateElement("DigestMethod", "http://www.w3.org/2000/09/xmldsig#");
-        //        digest.SetAttribute("Algorithm", digestMethod);
-        //        encryptionMethod.AppendChild(digest);
-        //    }
-        //    return element;
-        //}
+        private KeyInfoClause CreateEncryptedKeyClause(byte[] key, RSA rsa, XmlDocument document)
+        {
+            var keyInfo = new KeyInfo();
+            keyInfo.AddClause(CreateKeyInfoClause(rsa));
+            return CreateEncryptedKeyClause(key, keyInfo);
+        }
 
         private KeyInfoClause CreateEncryptedKeyClause(byte[] key, X509Certificate2 certificate, XmlDocument document)
         {
             var keyInfo = new KeyInfo();
             keyInfo.AddClause(CreateKeyInfoClause(certificate, document, out _));
+            return CreateEncryptedKeyClause(key, keyInfo);
+        }
 
+        private KeyInfoClause CreateEncryptedKeyClause(byte[] key, KeyInfo keyInfo)
+        {
             if (!Crypto.IsSupportedAlgorithm(_credentials.Alg, _credentials.Key))
                 throw new NotSupportedException(_credentials.Alg);
 
@@ -207,6 +198,11 @@ namespace Solid.IdentityModel.Xml
             };
 
             return new KeyInfoEncryptedKey { EncryptedKey = encryptedKey };
+        }
+
+        private KeyInfoClause CreateKeyInfoClause(RSA rsa)
+        {
+            return new RSAKeyValue(rsa);
         }
 
         private KeyInfoClause CreateKeyInfoClause(X509Certificate2 certificate, XmlDocument document, out string digest)

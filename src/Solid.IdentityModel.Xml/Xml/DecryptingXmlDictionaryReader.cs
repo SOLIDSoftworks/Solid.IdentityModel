@@ -9,6 +9,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Xml;
+using RSAKeyValue = System.Security.Cryptography.Xml.RSAKeyValue;
 
 namespace Solid.IdentityModel.Xml
 {
@@ -144,6 +145,13 @@ namespace Solid.IdentityModel.Xml
                     keys.AddRange(_tokenValidationParameters.ResolveDecryptionKeys(kid: name.Value));
                 if (clause is KeyInfoX509Data x509)
                     keys.AddRange(x509.Certificates.Cast<X509Certificate2>().Select(cert => new X509SecurityKey(cert)));
+                if (clause is RSAKeyValue rsa)
+                {
+                    var key = new RsaSecurityKey(rsa.Key);
+                    keys.AddRange(_tokenValidationParameters.ResolveDecryptionKeys(kid: key.KeyId));
+                    if (key.PrivateKeyStatus != PrivateKeyStatus.DoesNotExist)
+                        keys.Add(key);
+                }
                 if (clause is KeyInfoNode node)
                 {
                     if(node.Value.LocalName == "SecurityTokenReference")

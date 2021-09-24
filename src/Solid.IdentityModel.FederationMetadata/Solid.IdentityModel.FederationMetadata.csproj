@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include=".xsd\ws-federation.xsd" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include=".xsd\ws-addressing.xsd" />
+    <None Include=".xsd\ws-authorization.xsd" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Solid.IdentityModel.Tokens.Saml\Solid.IdentityModel.Tokens.Saml.csproj" />
+    <ProjectReference Include="..\Solid.IdentityModel.Xml\Solid.IdentityModel.Xml.csproj" />
+  </ItemGroup>
+
+</Project>

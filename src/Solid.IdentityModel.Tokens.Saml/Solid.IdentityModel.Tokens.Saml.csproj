@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -7,7 +7,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.IdentityModel.Tokens.Saml" Version="6.7.1" />
+    <None Include="Saml2\Metadata\.xsd\saml-schema-assertion-2.0.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Saml2\Metadata\.xsd\saml-schema-metadata-2.0.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Saml2\Metadata\.xsd\xenc-schema.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Saml2\Metadata\.xsd\xmldsig-core-schema.xsd">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.IdentityModel.Tokens.Saml" Version="6.8.0" />
   </ItemGroup>
 
   <ItemGroup>
