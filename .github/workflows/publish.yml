@@ -52,7 +52,7 @@ jobs:
         
       - name: push
         run: |
-          dotnet nuget push Solid.IdentityModel.Tokens.${{env.package_version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
-          dotnet nuget push Solid.IdentityModel.Xml.${{env.package_version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
-          dotnet nuget push Solid.IdentityModel.Tokens.Saml.${{env.package_version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
-          dotnet nuget push Solid.IdentityModel.FederationMetadata.${{env.package_version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
+          dotnet nuget push Solid.IdentityModel.Tokens.${{steps.semver.outputs.semantic-version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
+          dotnet nuget push Solid.IdentityModel.Xml.${{steps.semver.outputs.semantic-version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
+          dotnet nuget push Solid.IdentityModel.Tokens.Saml.${{steps.semver.outputs.semantic-version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
+          dotnet nuget push Solid.IdentityModel.FederationMetadata.${{steps.semver.outputs.semantic-version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
