@@ -111,7 +111,6 @@ namespace Solid.IdentityModel.Tokens.Saml2
                     {
                         CipherValue = cipherValue,
                         EncryptionMethod = credentials.Alg,
-                        DigestMethod = GetDigestMethodForAlgorithm(credentials.Alg),
                         KeyInfo = CreateKeyInfo(credentials.Key)
                     };
                 }
@@ -195,20 +194,6 @@ namespace Solid.IdentityModel.Tokens.Saml2
             if (Options.AuthenticationMethodMap.TryGetValue(authenticationMethod, out var context))
                 return context;
             return new Uri(AuthenticationContextClasses.Unspecified);
-        }
-
-        private string GetDigestMethodForAlgorithm(string algorithm)
-        {
-            // TODO: create centralized method for this
-            var rsa = new[]
-            {
-                SecurityAlgorithms.RsaOAEP,
-                SecurityAlgorithms.RsaOaepKeyWrap,
-                KeyWrapAlgorithms.RsaOaepMgf1pAlgorithm
-            };
-            if (rsa.Contains(algorithm))
-                return "http://www.w3.org/2000/09/xmldsig#sha1";
-            return null;
         }
     }
 }
