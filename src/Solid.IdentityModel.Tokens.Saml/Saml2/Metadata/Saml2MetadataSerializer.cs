@@ -497,6 +497,7 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
 
             var e = new IndexedEndpoint();
             ReadIndexedEndpointAttributes(reader, e);
+            _ = reader.ReadOuterXml();
             indexedEndpoint = e;
             return true;
         }
@@ -507,6 +508,7 @@ namespace Solid.IdentityModel.Tokens.Saml2.Metadata
 
             var e = new Endpoint();
             ReadEndpointAttributes(reader, e);
+            _ = reader.ReadOuterXml();
             endpoint = e;
             return true;
         }
