@@ -1,38 +1,58 @@
-name: publish 0.1.x to nuget
+name: publish
 on:
-  push:
-    branches:
-      - main # Default release branch
-
+  workflow_dispatch:
+   inputs:
+     incremented-value:
+       description: 'The part of the version number to increment.'
+       required: true
+       default: 'patch'    
+     prerelease:
+       description: 'The prerelease part of the version number.'
+       required: false
+       default: ''    
+     metadata:
+       description: 'The metadata part of the version number.'
+       required: false
+       default: ''      
 env:
-  version: 0.1.${{ github.run_number }}
-  package_version: 0.1.${{ github.run_number }}-beta  
-
+  DOTNET_ROLL_FORWARD_ON_NO_CANDIDATE_FX: '2'
 jobs:
   publish:
-    name: build, test, pack, & publish
+    name: publish
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Setup dotnet
+      
+      - name: Semver tags
+        id: semver
+        uses: SOLIDSoftworks/semver-tags@1.0.2
+        with:
+          # The github token.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          incremented-value: ${{ github.event.inputs.incremented-value }}
+          prerelease: ${{ github.event.inputs.prerelease }}
+          metadata: ${{ github.event.inputs.metadata }}
+
+      - name: setup_dotnet
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 3.1.200      
-#      - name: set dotnet roll forward
-#        uses: allenevans/set-env@v1.0.0
-#        with:
-#          DOTNET_ROLL_FORWARD_ON_NO_CANDIDATE_FX: '2'
-
-      - name: Install dependencies
-        run: dotnet restore ./src/Solid.IdentityModel.sln
-      - name: Build
-        run: dotnet build ./src/Solid.IdentityModel.sln --configuration Release --no-restore -p:VersionPrefix=${{ env.version }}
-      - name: Test
-        run: dotnet test ./src/Solid.IdentityModel.sln --configuration Release --no-restore --no-build
-      - name: Package
-        run: dotnet pack ./src/Solid.IdentityModel.sln --configuration Release --no-build -p:Version=${{ env.package_version }} -o ./ 
-      - name: Push
+          dotnet-version: 3.1.200 
+          
+      - name: install_dependencies
+        run: dotnet restore ./src
+        
+      - name: build
+        run: dotnet build ./src --configuration Release --no-restore -p:VersionPrefix=${{ steps.semver.outputs.core-version }}
+        
+      - name: test
+        run: dotnet test ./src --configuration Release --no-restore --no-build
+        
+      - name: package
+        run: dotnet pack ./src --configuration Release --no-build -p:Version=${{ steps.semver.outputs.semantic-version }} -o ./ 
+        
+      - name: push
         run: |
           dotnet nuget push Solid.IdentityModel.Tokens.${{env.package_version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
           dotnet nuget push Solid.IdentityModel.Xml.${{env.package_version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
           dotnet nuget push Solid.IdentityModel.Tokens.Saml.${{env.package_version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
+          dotnet nuget push Solid.IdentityModel.FederationMetadata.${{env.package_version}}.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
