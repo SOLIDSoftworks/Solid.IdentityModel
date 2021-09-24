@@ -20,6 +20,7 @@ namespace Solid.IdentityModel.Tokens.Saml2
             }
             return id;
         };
-        
+
+        public IDictionary<string, Uri> AuthenticationMethodMap { get; } = new Dictionary<string, Uri>();
     }
 }

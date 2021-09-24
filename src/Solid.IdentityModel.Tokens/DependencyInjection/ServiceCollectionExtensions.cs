@@ -18,10 +18,10 @@ namespace Microsoft.Extensions.DependencyInjection
             services.Configure(configureOptions);
             services.AddLogging();
             services.TryAddSingleton<CustomCryptoProvider>();
-            services.TryAddSingleton<CryptoProviderFactory>(p =>
+            services.TryAddSingleton<ICryptoProvider>(p => p.GetRequiredService<CustomCryptoProvider>());
+            services.TryAddTransient(p =>
             {
-                var custom = p.GetRequiredService<CustomCryptoProvider>();
-                CryptoProviderFactory.Default.CustomCryptoProvider = p.GetRequiredService<CustomCryptoProvider>();
+                p.InitializeDefaultCryptoProviderFactory();
                 return CryptoProviderFactory.Default;
             });
 

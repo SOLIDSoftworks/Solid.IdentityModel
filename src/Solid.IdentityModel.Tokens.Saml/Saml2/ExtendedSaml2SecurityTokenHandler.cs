@@ -2,13 +2,17 @@
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.IdentityModel.Tokens.Saml2;
 using Microsoft.IdentityModel.Xml;
+using Solid.IdentityModel.Tokens.Crypto;
 using Solid.IdentityModel.Xml;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Xml;
+using static Microsoft.IdentityModel.Tokens.Saml.SamlConstants;
 
 namespace Solid.IdentityModel.Tokens.Saml2
 {
@@ -31,29 +35,31 @@ namespace Solid.IdentityModel.Tokens.Saml2
         {
         }
 
-        public ExtendedSaml2SecurityTokenHandler(IOptionsMonitor<Saml2Options> monitor)
+        public ExtendedSaml2SecurityTokenHandler(IOptionsMonitor<Saml2Options> monitor, ExtendedSaml2Serializer serializer = null)
         {
+            Options = monitor.CurrentValue;
             _optionsChangeToken = monitor.OnChange((options, _) => Options = options);
+            Serializer = serializer ?? new ExtendedSaml2Serializer();
         }
 
-        // protected virtual SecurityKey GetProofKey(Saml2SubjectConfirmation holderOfKey, TokenValidationParameters validationParameters)
-        // {
-        //     var info = holderOfKey.SubjectConfirmationData.KeyInfos.SingleOrDefault();
-
-        //     if (info == null) return null;
-
-        //     if (info is BinarySecretKeyInfo binary)
-        //         return new SymmetricSecurityKey(binary.Key);
-
-        //     if(info is EncryptedKeyInfo encrypted)
-        //     {
-        //         foreach(var key in validationParameters.key)
-        //     }
-
-        //     return null;
-        // }
-
         public void Dispose() => _optionsChangeToken?.Dispose();
+
+        public override SecurityToken CreateToken(SecurityTokenDescriptor tokenDescriptor)
+        {
+            var information = CreateAuthenticationInformation(tokenDescriptor);
+            return CreateToken(tokenDescriptor, information);
+        }
+
+        public override SecurityToken CreateToken(SecurityTokenDescriptor tokenDescriptor, AuthenticationInformation authenticationInformation)
+        {
+            var saml2 = base.CreateToken(tokenDescriptor, authenticationInformation) as Saml2SecurityToken;
+
+            var authnStatement = saml2.Assertion.Statements.OfType<Saml2AuthenticationStatement>().FirstOrDefault();
+            if (authnStatement != null)
+                authnStatement.SessionIndex = saml2.Id;
+
+            return saml2;
+        }
 
         protected override Saml2Subject CreateSubject(SecurityTokenDescriptor tokenDescriptor)
         {
@@ -105,17 +111,19 @@ namespace Solid.IdentityModel.Tokens.Saml2
                     {
                         CipherValue = cipherValue,
                         EncryptionMethod = credentials.Alg,
+                        DigestMethod = GetDigestMethodForAlgorithm(credentials.Alg),
                         KeyInfo = CreateKeyInfo(credentials.Key)
                     };
                 }
                 finally
                 {
-                    crypto?.ReleaseKeyWrapProvider(keyWrap);
+                    if(keyWrap != null)
+                        crypto?.ReleaseKeyWrapProvider(keyWrap);
                 }
             }
             else if (tokenDescriptor.ProofKey is AsymmetricSecurityKey)
             {
-                throw new NotSupportedException($"Asymmetric proof keys not supproted for now.");
+                throw new NotSupportedException($"Asymmetric proof keys not supported for now.");
             }
             else
             {
@@ -129,11 +137,16 @@ namespace Solid.IdentityModel.Tokens.Saml2
             {
                 if (Options.UseSecurityTokenReference)
                 {
-                    return new SecurityTokenReferenceKeyInfo
+                    var publicKey = x509.Certificate.Export(X509ContentType.Cert);
+                    using (var sha1 = SHA1.Create())
                     {
-                        KeyIdValueType = "http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#ThumbprintSHA1",
-                        KeyId = x509.X5t
-                    };
+                        var hashed = sha1.ComputeHash(publicKey);
+                        return new SecurityTokenReferenceKeyInfo
+                        {
+                            KeyIdValueType = "http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#ThumbprintSHA1",
+                            KeyId = Convert.ToBase64String(hashed)
+                        };
+                    }
                 }
 
                 return new KeyInfo
@@ -160,6 +173,42 @@ namespace Solid.IdentityModel.Tokens.Saml2
             {
                 TokenDecryptionKey = Options.DefaultDecryptionKey
             };
+        }
+
+        protected virtual AuthenticationInformation CreateAuthenticationInformation(SecurityTokenDescriptor tokenDescriptor)
+        {
+            var user = tokenDescriptor.Subject;
+            var authenticationMethod = user.FindFirst(ClaimTypes.AuthenticationMethod)?.Value;
+            var authenticationInstant = user.FindFirst(ClaimTypes.AuthenticationInstant)?.Value;
+
+            if (authenticationMethod == null || authenticationInstant == null) return null;
+            if (!DateTime.TryParse(authenticationInstant, out var date)) return null;
+
+            var authenticationContext = CreateAuthenticationContext(authenticationMethod);
+            if (authenticationContext == null) return null;
+
+            return new AuthenticationInformation(authenticationContext, date);
+        }
+
+        protected virtual Uri CreateAuthenticationContext(string authenticationMethod)
+        {
+            if (Options.AuthenticationMethodMap.TryGetValue(authenticationMethod, out var context))
+                return context;
+            return new Uri(AuthenticationContextClasses.Unspecified);
+        }
+
+        private string GetDigestMethodForAlgorithm(string algorithm)
+        {
+            // TODO: create centralized method for this
+            var rsa = new[]
+            {
+                SecurityAlgorithms.RsaOAEP,
+                SecurityAlgorithms.RsaOaepKeyWrap,
+                KeyWrapAlgorithms.RsaOaepMgf1pAlgorithm
+            };
+            if (rsa.Contains(algorithm))
+                return "http://www.w3.org/2000/09/xmldsig#sha1";
+            return null;
         }
     }
 }
