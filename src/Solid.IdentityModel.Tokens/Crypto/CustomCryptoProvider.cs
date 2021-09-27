@@ -190,14 +190,21 @@ namespace Solid.IdentityModel.Tokens.Crypto
 
         private bool IsSupportedKeyWrapAlgorithm(string algorithm, object[] args, out KeyWrapProviderDescriptor descriptor)
         {
-            if (args.Length == 1 && args[0] is AsymmetricSecurityKey asymmetric)
-                return IsSupportedKeyWrapAlgorithm(algorithm, asymmetric, out descriptor);
+            if (args.Length > 0)
+            {
+                if (args[0] is SecurityKey key)
+                {
+                    if (args.Length == 2 && args[1] is bool willUnwrap)
+                        return IsSupportedKeyWrapAlgorithm(algorithm, key, willUnwrap, out descriptor);
+                    return IsSupportedKeyWrapAlgorithm(algorithm, key, null, out descriptor);
+                }
+            }
 
             descriptor = null;
             return false;
         }
 
-        private bool IsSupportedKeyWrapAlgorithm(string algorithm, AsymmetricSecurityKey asymmetric, out KeyWrapProviderDescriptor descriptor)
+        private bool IsSupportedKeyWrapAlgorithm(string algorithm, SecurityKey key, bool? willUnwrap, out KeyWrapProviderDescriptor descriptor)
             => _options.SupportedKeyWrapAlgorithms.TryGetValue(algorithm, out descriptor);
 
         private bool IsSupportedEncryptionAlgorithm(string algorithm, object[] args, out AuthenticatedEncryptionProviderDescriptor descriptor)
@@ -226,20 +233,21 @@ namespace Solid.IdentityModel.Tokens.Crypto
 
         private bool IsSupportedSignatureAlgorithm(string algorithm, object[] args, out SignatureProviderDescriptor descriptor)
         {
-            if (args.Length == 1 && args[0] is AsymmetricSecurityKey asymmetric)
-                return IsSupportedSignatureAlgorithm(algorithm, asymmetric, asymmetric.PrivateKeyStatus == PrivateKeyStatus.Exists, out descriptor);
-
-            if (args.Length == 1 && args[0] is SymmetricSecurityKey symmetric)
-                return IsSupportedSignatureAlgorithm(algorithm, symmetric, true, out descriptor);
-
-            if (args.Length == 2 && args[0] is SecurityKey key && args[1] is bool willCreateSignature)
-                return IsSupportedSignatureAlgorithm(algorithm, key, willCreateSignature, out descriptor);
+            if(args.Length > 0)
+            {
+                if(args[0] is SecurityKey key)
+                {
+                    if(args.Length == 2 && args[1] is bool willCreateSignature)
+                        return IsSupportedSignatureAlgorithm(algorithm, key, willCreateSignature, out descriptor);
+                    return IsSupportedSignatureAlgorithm(algorithm, key, null, out descriptor);
+                }
+            }
 
             descriptor = null;
             return false;
         }
 
-        private bool IsSupportedSignatureAlgorithm(string algorithm, SecurityKey key, bool willCreateSignature, out SignatureProviderDescriptor descriptor)
+        private bool IsSupportedSignatureAlgorithm(string algorithm, SecurityKey key, bool? willCreateSignature, out SignatureProviderDescriptor descriptor)
             => _options.SupportedSignatureAlgorithms.TryGetValue(algorithm, out descriptor);
 
         private bool IsSupportedHashAlgorithm(string algorithm, object[] args, out HashAlgorithmDescriptor descriptor)
@@ -257,13 +265,15 @@ namespace Solid.IdentityModel.Tokens.Crypto
         private bool IsSupportedSymmetricAlgorithm(string algorithm, object[] args, out SymmetricAlgorithmDescriptor descriptor)
         {
             if (args.Length == 0)
-                return IsSupportedSymmetricAlgorithm(algorithm, out descriptor);
+                return IsSupportedSymmetricAlgorithm(algorithm, null as SecurityKey, out descriptor);
+            if (args.Length == 1 && args[0] is SecurityKey key)
+                return IsSupportedSymmetricAlgorithm(algorithm, key, out descriptor);
 
             descriptor = null;
             return false;
         }
 
-        private bool IsSupportedSymmetricAlgorithm(string algorithm, out SymmetricAlgorithmDescriptor descriptor)
+        private bool IsSupportedSymmetricAlgorithm(string algorithm, SecurityKey key, out SymmetricAlgorithmDescriptor descriptor)
             => _options.SupportedSymmetricAlgorithms.TryGetValue(algorithm, out descriptor);
 
         enum AlgorithmType
