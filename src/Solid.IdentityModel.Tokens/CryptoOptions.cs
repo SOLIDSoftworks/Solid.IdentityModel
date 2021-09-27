@@ -48,9 +48,9 @@ namespace Solid.IdentityModel.Tokens
             return this;
         }
 
-        public CryptoOptions AddSupportedSignatureAlgorithm(string algorithm, Func<IServiceProvider, SecurityKey, SignatureProvider> factory)
+        public CryptoOptions AddSupportedSignatureAlgorithm(string algorithm, Func<IServiceProvider, SecurityKey, bool, SignatureProvider> factory)
         {
-            SupportedSignatureAlgorithms[algorithm] = new SignatureProviderDescriptor(algorithm, (services, args) => factory(services, args.FirstOrDefault() as SecurityKey));
+            SupportedSignatureAlgorithms[algorithm] = new SignatureProviderDescriptor(algorithm, (services, args) => factory(services, args.FirstOrDefault() as SecurityKey, (bool)args.ElementAtOrDefault(1)));
             return this;
         }
 
@@ -60,9 +60,9 @@ namespace Solid.IdentityModel.Tokens
             return this;
         }
 
-        public CryptoOptions AddSupportedKeyedHashAlgorithm(string algorithm, Func<IServiceProvider, KeyedHashAlgorithm> factory)
+        public CryptoOptions AddSupportedKeyedHashAlgorithm(string algorithm, Func<IServiceProvider, byte[], KeyedHashAlgorithm> factory)
         {
-            SupportedKeyedHashAlgorithms[algorithm] = new KeyedHashAlgorithmDescriptor(algorithm, (services, args) => factory(services));
+            SupportedKeyedHashAlgorithms[algorithm] = new KeyedHashAlgorithmDescriptor(algorithm, (services, args) => factory(services, args.FirstOrDefault() as byte[]));
             return this;
         }
 

@@ -68,7 +68,7 @@ namespace Solid.IdentityModel.Tokens.Crypto
 
             if (type.HasFlag(AlgorithmType.Hash))
             {
-                if (_options.SupportedHashAlgorithms.TryGetValue(algorithm, out var hashAlgorithmDescriptor))
+                if (IsSupportedHashAlgorithm(algorithm, args, out var hashAlgorithmDescriptor))
                 {
                     _logger.LogDebug($"Creating {nameof(HashAlgorithm)} for '{algorithm}'");
                     return hashAlgorithmDescriptor.Factory(_services, args);
@@ -79,7 +79,7 @@ namespace Solid.IdentityModel.Tokens.Crypto
 
             if (type.HasFlag(AlgorithmType.Signature))
             {
-                if (_options.SupportedSignatureAlgorithms.TryGetValue(algorithm, out var signatureProviderDescriptor))
+                if (IsSupportedSignatureAlgorithm(algorithm, args, out var signatureProviderDescriptor))
                 {
                     _logger.LogDebug($"Creating {nameof(SignatureProvider)} for '{algorithm}'");
                     return signatureProviderDescriptor.Factory(_services, args);
@@ -98,7 +98,7 @@ namespace Solid.IdentityModel.Tokens.Crypto
 
             if (type.HasFlag(AlgorithmType.KeyedHash))
             {
-                if (_options.SupportedKeyedHashAlgorithms.TryGetValue(algorithm, out var keyedHashAlgorithmDescriptor))
+                if (IsSupportedKeyedHashAlgorithm(algorithm, args, out var keyedHashAlgorithmDescriptor))
                 {
                     _logger.LogDebug($"Creating {nameof(KeyedHashAlgorithm)} for '{algorithm}'");
                     return keyedHashAlgorithmDescriptor.Factory(_services, args);
@@ -109,7 +109,7 @@ namespace Solid.IdentityModel.Tokens.Crypto
 
             if (type.HasFlag(AlgorithmType.KeyWrap))
             {
-                if (_options.SupportedKeyWrapAlgorithms.TryGetValue(algorithm, out var keyWrapProviderDescriptor))
+                if (IsSupportedKeyWrapAlgorithm(algorithm, args, out var keyWrapProviderDescriptor))
                 {
                     _logger.LogDebug($"Creating {nameof(KeyWrapProvider)} for '{algorithm}'");
                     return keyWrapProviderDescriptor.Factory(_services, args);
@@ -124,7 +124,7 @@ namespace Solid.IdentityModel.Tokens.Crypto
 
             if (type.HasFlag(AlgorithmType.Encryption))
             {
-                if (_options.SupportedEncryptionAlgorithms.TryGetValue(algorithm, out var authenticatedEncryptionProviderDescriptor))
+                if (IsSupportedEncryptionAlgorithm(algorithm, args, out var authenticatedEncryptionProviderDescriptor))
                 {
                     _logger.LogDebug($"Creating {nameof(AuthenticatedEncryptionProvider)} for '{algorithm}'");
                     return authenticatedEncryptionProviderDescriptor.Factory(_services, args);
@@ -135,7 +135,7 @@ namespace Solid.IdentityModel.Tokens.Crypto
 
             if (type.HasFlag(AlgorithmType.Symmetric))
             {
-                if (_options.SupportedSymmetricAlgorithms.TryGetValue(algorithm, out var symmetricAlgorithmDescriptor))
+                if (IsSupportedSymmetricAlgorithm(algorithm, args, out var symmetricAlgorithmDescriptor))
                 {
                     _logger.LogDebug($"Creating {nameof(SymmetricAlgorithm)} for '{algorithm}'");
                     return symmetricAlgorithmDescriptor.Factory(_services, args);
@@ -154,7 +154,7 @@ namespace Solid.IdentityModel.Tokens.Crypto
                 IsSupportedAlgorithm(_options.KeyedHashAlgorithmMap, algorithm, args) ||
                 IsSupportedAlgorithm(_options.KeyWrapAlgorithmMap, algorithm, args) ||
                 IsSupportedAlgorithm(_options.EncryptionAlgorithmMap, algorithm, args) ||
-                IsSupportedByCustomCryptoProvider(algorithm)
+                IsSupportedByCustomCryptoProvider(algorithm, args)
             ;
         }
 
@@ -178,17 +178,93 @@ namespace Solid.IdentityModel.Tokens.Crypto
 
         public void Dispose() => _optionsChangeToken?.Dispose();
 
-        private bool IsSupportedByCustomCryptoProvider(string algorithm)
-        {
-            return
-                _options.SupportedSymmetricAlgorithms.ContainsKey(algorithm) ||
-                _options.SupportedHashAlgorithms.ContainsKey(algorithm) ||
-                _options.SupportedSignatureAlgorithms.ContainsKey(algorithm) ||
-                _options.SupportedEncryptionAlgorithms.ContainsKey(algorithm) ||
-                _options.SupportedKeyedHashAlgorithms.ContainsKey(algorithm) ||
-                _options.SupportedKeyWrapAlgorithms.ContainsKey(algorithm)
+        private bool IsSupportedByCustomCryptoProvider(string algorithm, object[] args)
+            =>  IsSupportedEncryptionAlgorithm(algorithm, args, out _) || 
+                IsSupportedHashAlgorithm(algorithm, args, out _) ||
+                IsSupportedKeyedHashAlgorithm(algorithm, args, out _) ||
+                IsSupportedKeyWrapAlgorithm(algorithm, args, out _) ||
+                IsSupportedSignatureAlgorithm(algorithm, args, out _) ||
+                IsSupportedSymmetricAlgorithm(algorithm, args, out _)
             ;
+                
+
+        private bool IsSupportedKeyWrapAlgorithm(string algorithm, object[] args, out KeyWrapProviderDescriptor descriptor)
+        {
+            if (args.Length == 1 && args[0] is AsymmetricSecurityKey asymmetric)
+                return IsSupportedKeyWrapAlgorithm(algorithm, asymmetric, out descriptor);
+
+            descriptor = null;
+            return false;
         }
+
+        private bool IsSupportedKeyWrapAlgorithm(string algorithm, AsymmetricSecurityKey asymmetric, out KeyWrapProviderDescriptor descriptor)
+            => _options.SupportedKeyWrapAlgorithms.TryGetValue(algorithm, out descriptor);
+
+        private bool IsSupportedEncryptionAlgorithm(string algorithm, object[] args, out AuthenticatedEncryptionProviderDescriptor descriptor)
+        {
+            if (args.Length == 1 && args[0] is SecurityKey key)
+                return IsSupportedEncryptionAlgorithm(algorithm, key, out descriptor);
+
+            descriptor = null;
+            return false;
+        }
+
+        private bool IsSupportedEncryptionAlgorithm(string algorithm, SecurityKey key, out AuthenticatedEncryptionProviderDescriptor descriptor)
+            => _options.SupportedEncryptionAlgorithms.TryGetValue(algorithm, out descriptor);
+
+        private bool IsSupportedKeyedHashAlgorithm(string algorithm, object[] args, out KeyedHashAlgorithmDescriptor descriptor)
+        {
+            if (args.Length == 1 && args[0] is byte[] keyBytes)
+                return IsSupportedKeyedHashAlgorithm(algorithm, keyBytes, out descriptor);
+
+            descriptor = null;
+            return false;
+        }
+
+        private bool IsSupportedKeyedHashAlgorithm(string algorithm, byte[] keyBytes, out KeyedHashAlgorithmDescriptor descriptor)
+            => _options.SupportedKeyedHashAlgorithms.TryGetValue(algorithm, out descriptor);
+
+        private bool IsSupportedSignatureAlgorithm(string algorithm, object[] args, out SignatureProviderDescriptor descriptor)
+        {
+            if (args.Length == 1 && args[0] is AsymmetricSecurityKey asymmetric)
+                return IsSupportedSignatureAlgorithm(algorithm, asymmetric, asymmetric.PrivateKeyStatus == PrivateKeyStatus.Exists, out descriptor);
+
+            if (args.Length == 1 && args[0] is SymmetricSecurityKey symmetric)
+                return IsSupportedSignatureAlgorithm(algorithm, symmetric, true, out descriptor);
+
+            if (args.Length == 2 && args[0] is SecurityKey key && args[1] is bool willCreateSignature)
+                return IsSupportedSignatureAlgorithm(algorithm, key, willCreateSignature, out descriptor);
+
+            descriptor = null;
+            return false;
+        }
+
+        private bool IsSupportedSignatureAlgorithm(string algorithm, SecurityKey key, bool willCreateSignature, out SignatureProviderDescriptor descriptor)
+            => _options.SupportedSignatureAlgorithms.TryGetValue(algorithm, out descriptor);
+
+        private bool IsSupportedHashAlgorithm(string algorithm, object[] args, out HashAlgorithmDescriptor descriptor)
+        {
+            if (args.Length == 0)
+                return IsSupportedHashAlgorithm(algorithm, out descriptor);
+
+            descriptor = null;
+            return false;
+        }
+
+        private bool IsSupportedHashAlgorithm(string algorithm, out HashAlgorithmDescriptor descriptor)
+            => _options.SupportedHashAlgorithms.TryGetValue(algorithm, out descriptor);
+
+        private bool IsSupportedSymmetricAlgorithm(string algorithm, object[] args, out SymmetricAlgorithmDescriptor descriptor)
+        {
+            if (args.Length == 0)
+                return IsSupportedSymmetricAlgorithm(algorithm, out descriptor);
+
+            descriptor = null;
+            return false;
+        }
+
+        private bool IsSupportedSymmetricAlgorithm(string algorithm, out SymmetricAlgorithmDescriptor descriptor)
+            => _options.SupportedSymmetricAlgorithms.TryGetValue(algorithm, out descriptor);
 
         enum AlgorithmType
         {
