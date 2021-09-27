@@ -65,11 +65,11 @@ namespace Solid.IdentityModel.Tokens.Tests
         }
         
         [Theory]
-        //[InlineData("http://www.w3.org/2000/09/xmldsig#hmac-sha1")]
+        [InlineData("http://www.w3.org/2000/09/xmldsig#hmac-sha1")]
         [InlineData(SecurityAlgorithms.HmacSha256Signature)]
         [InlineData(SecurityAlgorithms.HmacSha384Signature)]
         [InlineData(SecurityAlgorithms.HmacSha512Signature)]
-        //[InlineData("H1")]
+        [InlineData("H1")]
         [InlineData(SecurityAlgorithms.HmacSha256)]
         [InlineData(SecurityAlgorithms.HmacSha384)]
         [InlineData(SecurityAlgorithms.HmacSha512)]
@@ -96,6 +96,16 @@ namespace Solid.IdentityModel.Tokens.Tests
         }
 
         [Theory]
+        [InlineData("http://www.w3.org/2000/09/xmldsig#hmac-sha1")]
+        [InlineData("H1")]
+        public void ShouldSupportKeyedHashAlgorithm(string algorithm)
+        {
+            var key = new X509SecurityKey(Certificate);
+            var crypto = CreateCryptoProviderFactory();
+            Assert.True(crypto.IsSupportedAlgorithm(algorithm, key));
+        }
+
+        [Theory]
         [InlineData("http://www.w3.org/2000/09/xmldsig#sha1", typeof(SHA1))]
         [InlineData(SecurityAlgorithms.Sha256Digest, typeof(SHA256))]
         [InlineData(SecurityAlgorithms.Sha384Digest, typeof(SHA384))]
@@ -104,6 +114,20 @@ namespace Solid.IdentityModel.Tokens.Tests
         {
             var crypto = CreateCryptoProviderFactory();
             var hashAlgorithm = crypto.CreateHashAlgorithm(algorithm);
+
+            Assert.NotNull(hashAlgorithm);
+            Assert.IsAssignableFrom(type, hashAlgorithm);
+        }
+
+        [Theory]
+        [InlineData("http://www.w3.org/2000/09/xmldsig#hmac-sha1", typeof(HMACSHA1))]
+        [InlineData("H1", typeof(HMACSHA1))]
+        public void ShouldGetKeyedHashAlgorithm(string algorithm, Type type)
+        {
+            var key = new byte[16];
+            RandomNumberGenerator.Fill(key);
+            var crypto = CreateCryptoProviderFactory();
+            var hashAlgorithm = crypto.CreateKeyedHashAlgorithm(key, algorithm);
 
             Assert.NotNull(hashAlgorithm);
             Assert.IsAssignableFrom(type, hashAlgorithm);
