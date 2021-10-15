@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Solid.IdentityModel.Tokens.Saml.Tests
 {
-    public class SamlTestFixture : IDisposable
+    public class Saml2TestFixture : IDisposable
     {
         private RSA _encryptingAlgorithm;
         private RSA _signingAlgorithm;
@@ -28,7 +28,7 @@ namespace Solid.IdentityModel.Tokens.Saml.Tests
         public SecurityKey DefaultEncryptionKey => _lazyEncryptionKey.Value;
         public SecurityKey DefautDecryptionKey => _lazyDecryptionKey.Value;
 
-        public SamlTestFixture()
+        public Saml2TestFixture()
         {
             _encryptingAlgorithm = RSA.Create(2048);
             _signingAlgorithm = RSA.Create(2048);

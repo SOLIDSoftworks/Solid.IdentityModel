@@ -191,10 +191,13 @@ namespace Solid.IdentityModel.Tokens.Saml2
 
         protected virtual Uri CreateAuthenticationContext(string authenticationMethod)
         {
-            if (Options.AuthenticationMethodMap.TryGetValue(authenticationMethod, out var context))
-                return context;
-            if (!string.IsNullOrWhiteSpace(authenticationMethod) && Uri.IsWellFormedUriString(authenticationMethod, UriKind.Absolute))
-                return new Uri(authenticationMethod);
+            if (!string.IsNullOrWhiteSpace(authenticationMethod))
+            {
+                if (Options.AuthenticationMethodMap.TryGetValue(authenticationMethod, out var context))
+                    return context;
+                if (Uri.IsWellFormedUriString(authenticationMethod, UriKind.Absolute))
+                    return new Uri(authenticationMethod);
+            }
             return new Uri(AuthenticationContextClasses.Unspecified);
         }
     }
