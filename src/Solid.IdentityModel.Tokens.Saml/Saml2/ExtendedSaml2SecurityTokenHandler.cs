@@ -180,7 +180,7 @@ namespace Solid.IdentityModel.Tokens.Saml2
             var authenticationMethod = user.FindFirst(ClaimTypes.AuthenticationMethod)?.Value;
             var authenticationInstant = user.FindFirst(ClaimTypes.AuthenticationInstant)?.Value;
 
-            if (authenticationMethod == null || authenticationInstant == null) return null;
+            if (authenticationInstant == null) return null;
             if (!DateTime.TryParse(authenticationInstant, out var date)) return null;
 
             var authenticationContext = CreateAuthenticationContext(authenticationMethod);
@@ -193,6 +193,8 @@ namespace Solid.IdentityModel.Tokens.Saml2
         {
             if (Options.AuthenticationMethodMap.TryGetValue(authenticationMethod, out var context))
                 return context;
+            if (!string.IsNullOrWhiteSpace(authenticationMethod) && Uri.IsWellFormedUriString(authenticationMethod, UriKind.Absolute))
+                return new Uri(authenticationMethod);
             return new Uri(AuthenticationContextClasses.Unspecified);
         }
     }
