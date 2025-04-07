@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Logging;
-using Microsoft.IdentityModel.Protocols.WsSecurity;
-using Microsoft.IdentityModel.Protocols.WsTrust;
+using Solid.IdentityModel.Protocols.WsSecurity;
+using Solid.IdentityModel.Protocols.WsTrust;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.IdentityModel.Tokens.Saml2;
 using Microsoft.IdentityModel.Xml;

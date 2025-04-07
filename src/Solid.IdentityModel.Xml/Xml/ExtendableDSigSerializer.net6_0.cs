@@ -1,4 +1,5 @@
-﻿using Microsoft.IdentityModel.Logging;
+﻿#if NET6_0
+using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Xml;
 using System;
 using System.Collections.Generic;
@@ -315,3 +316,4 @@ namespace Solid.IdentityModel.Xml
         }
     }
 }
+#endif

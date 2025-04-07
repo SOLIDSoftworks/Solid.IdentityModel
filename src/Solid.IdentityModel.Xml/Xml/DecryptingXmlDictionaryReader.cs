@@ -118,9 +118,9 @@ namespace Solid.IdentityModel.Xml
                         }
                     }
                 }
-                catch (Exception ex)
+                catch
                 {
-
+                    // ignored
                 }
                 finally
                 {

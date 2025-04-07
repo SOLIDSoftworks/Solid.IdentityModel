@@ -1,5 +1,4 @@
-﻿using Microsoft.IdentityModel.Protocols.WsSecurity;
-using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.IdentityModel.Tokens;
 using Microsoft.IdentityModel.Xml;
 using System;
 using System.Collections.Generic;
@@ -10,14 +9,20 @@ using System.Xml;
 using System.Security.Cryptography;
 using Legacy = System.Security.Cryptography.Xml;
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.IdentityModel.Protocols.WsTrust;
-using Microsoft.IdentityModel.Protocols;
 using System.Xml.Linq;
 using System.Xml.XPath;
+using Solid.IdentityModel.Protocols;
+using Solid.IdentityModel.Protocols.WsSecurity;
+using Solid.IdentityModel.Protocols.WsTrust;
 
 namespace Solid.IdentityModel.Xml
 {
-    public class ExtendedDSigSerializer : ExtendableDSigSerializer
+    public class ExtendedDSigSerializer
+    #if NET6_0
+        : ExtendableDSigSerializer
+    #else
+        : DSigSerializer
+    #endif
     {
         static ExtendedDSigSerializer()
         {
